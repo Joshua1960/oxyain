@@ -1,0 +1,8 @@
+{
+  "name": "Oxyain — High-Speed 3D Academic Tournament Suite",
+  "description": "High-speed multiplayer 3D educational gaming suite merging Grand Prix car racing, stadium sprinting, and hurdles with real-time academic quizzes across STEM, Literature, Social Sciences, Business, and General Knowledge.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
