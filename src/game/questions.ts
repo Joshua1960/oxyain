@@ -922,7 +922,8 @@ export interface SourceExtractionInput {
   fileSizeBytes?: number;
   websiteUrl?: string;
   rawContent: string;
-  targetSubject: Exclude<SubjectId, 'all'>;
+  base64Data?: string;
+  targetSubject?: Exclude<SubjectId, 'all'>;
   targetDifficulty: 'easy' | 'medium' | 'hard';
   questionCount: number;
   parserEngine: AiParserEngineId;
@@ -1002,6 +1003,281 @@ Section 1: Dual-Process Cognition and Prospect Theory.
   },
 ];
 
+const STOP_WORDS = new Set([
+  'about',
+  'after',
+  'again',
+  'against',
+  'among',
+  'because',
+  'before',
+  'being',
+  'below',
+  'between',
+  'both',
+  'could',
+  'during',
+  'each',
+  'from',
+  'further',
+  'having',
+  'into',
+  'more',
+  'most',
+  'other',
+  'over',
+  'same',
+  'should',
+  'some',
+  'such',
+  'than',
+  'that',
+  'their',
+  'them',
+  'then',
+  'there',
+  'these',
+  'they',
+  'this',
+  'those',
+  'through',
+  'under',
+  'until',
+  'very',
+  'what',
+  'when',
+  'where',
+  'which',
+  'while',
+  'with',
+  'within',
+  'without',
+  'would',
+  'also',
+  'does',
+  'have',
+  'were',
+  'been',
+  'only',
+  'upon',
+  'every',
+]);
+
+/**
+ * Checks whether a token is a genuine human-readable word or number,
+ * rejecting compressed binary/PDF/ZIP noise like "moyD", "IvG", "5$", "2hk", "'X9", "PN'k", "UfP\"&n", "ji]K".
+ */
+export function isNaturalLanguageWord(rawToken: string): boolean {
+  const trimmed = rawToken
+    .replace(/^[(\[{"'“”‘’]+|[.,;:?!)\]}"'“”‘’]+$/g, '')
+    .trim();
+  if (!trimmed || trimmed.length > 32) return false;
+
+  // Reject tokens containing binary/cipher symbols inside the word
+  if (/[$&[\]{}\\|~`@#*^<>_"']/.test(trimmed)) {
+    return false;
+  }
+
+  // Allow clean numeric values or measurements (e.g., "100", "40", "120%", "36", "18.01")
+  if (/^\d+(?:\.\d+)?(?:%|s|m|km|kg|Hz|W|J|V|A)?$/.test(trimmed)) {
+    return true;
+  }
+
+  // Allow standard mathematical/scientific expressions used in STEM notes (e.g., "s(t)", "v(t)", "ds/dt")
+  if (/^[a-zA-Z]\([a-zA-Z0-9]\)$/.test(trimmed) || /^d[a-z]\/d[a-z]$/.test(trimmed)) {
+    return true;
+  }
+
+  // Must consist strictly of letters (and optional internal hyphen or possessive 's)
+  const cleanWord = trimmed.replace(/'s$/i, '');
+  if (!/^[A-Za-z]+(?:-[A-Za-z]+)*$/.test(cleanWord)) {
+    return false;
+  }
+
+  // Single-letter words in English are only "a", "A", "I", or math variables in equations
+  if (cleanWord.length === 1) {
+    return /^[aAiIxyzrtvmn]$/.test(cleanWord);
+  }
+
+  // Reject words with random uppercase letters after lowercase letters (e.g., "moyD", "IvG", "uFp")
+  const parts = cleanWord.split('-');
+  for (const part of parts) {
+    const isAllLower = /^[a-z]+$/.test(part);
+    const isTitleCase = /^[A-Z][a-z]+$/.test(part);
+    const isAcronym = /^[A-Z]{2,6}$/.test(part);
+    if (!isAllLower && !isTitleCase && !isAcronym) {
+      return false;
+    }
+    // Non-acronym words of 3+ chars must contain at least one vowel and not have 5+ consecutive consonants
+    if (!isAcronym && part.length >= 3) {
+      if (!/[aeiouyAEIOUY]/.test(part)) return false;
+      if (/[bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ]{5,}/.test(part)) return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Checks whether a candidate clause is a genuine human-readable sentence/phrase
+ * rather than binary stream noise.
+ */
+export function isNaturalLanguageClause(clause: string): boolean {
+  const cleaned = clause.trim();
+  if (cleaned.length < 18) return false;
+
+  const rawTokens = cleaned.split(/\s+/).filter(Boolean);
+  if (rawTokens.length < 4) return false;
+
+  let validWords = 0;
+  let multiCharWords = 0;
+  let mathConnectors = 0;
+
+  for (const tok of rawTokens) {
+    if (/^[=+\-*/Δ()]+$/.test(tok)) {
+      mathConnectors++;
+      continue;
+    }
+    if (isNaturalLanguageWord(tok)) {
+      validWords++;
+      const alphaOnly = tok.replace(/[^A-Za-z]/g, '');
+      if (alphaOnly.length >= 3) {
+        multiCharWords++;
+      }
+    }
+  }
+
+  const effectiveTotal = Math.max(1, rawTokens.length - mathConnectors);
+  const validRatio = validWords / effectiveTotal;
+
+  return validWords >= 4 && multiCharWords >= 3 && validRatio >= 0.65;
+}
+
+/**
+ * Automatically infers the closest academic subject category from the source text
+ * so users do not need to manually pick a Subject dropdown when extracting from a source.
+ */
+export function inferSubjectFromSourceText(
+  text: string
+): Exclude<SubjectId, 'all'> {
+  const lower = (text || '').toLowerCase();
+  const scores: Record<Exclude<SubjectId, 'all'>, number> = {
+    stem: 0,
+    business: 0,
+    social: 0,
+    literature: 0,
+    general: 1,
+  };
+
+  const stemTerms = [
+    'velocity',
+    'acceleration',
+    'calculus',
+    'derivative',
+    'integral',
+    'energy',
+    'force',
+    'mass',
+    'physics',
+    'chemistry',
+    'biology',
+    'cell',
+    'photosynthesis',
+    'chloroplast',
+    'mitochondria',
+    'atp',
+    'glucose',
+    'molecule',
+    'atom',
+    'electron',
+    'quantum',
+    'equation',
+    'theorem',
+    'algorithm',
+    'function',
+    'matrix',
+    'vector',
+    'dna',
+    'rna',
+    'protein',
+  ];
+  const businessTerms = [
+    'capital',
+    'wacc',
+    'revenue',
+    'equity',
+    'debt',
+    'market',
+    'bond',
+    'yield',
+    'valuation',
+    'cash flow',
+    'fcff',
+    'retention',
+    'monetary',
+    'fiscal',
+    'inflation',
+    'interest rate',
+    'investment',
+    'margin',
+    'profit',
+    'finance',
+    'corporate',
+  ];
+  const socialTerms = [
+    'cognition',
+    'heuristic',
+    'psychology',
+    'sociology',
+    'equilibrium',
+    'pareto',
+    'kahneman',
+    'decision',
+    'society',
+    'political',
+    'government',
+    'history',
+    'treaty',
+    'constitution',
+    'democracy',
+    'policy',
+    'behavior',
+  ];
+  const literatureTerms = [
+    'novel',
+    'poem',
+    'poetry',
+    'shakespeare',
+    'metaphor',
+    'narrative',
+    'protagonist',
+    'rhetoric',
+    'tragedy',
+    'author',
+    'literary',
+    'stanza',
+    'allegory',
+    'irony',
+    'sonnet',
+    'dramatic',
+  ];
+
+  for (const w of stemTerms) if (lower.includes(w)) scores.stem += 2;
+  for (const w of businessTerms) if (lower.includes(w)) scores.business += 2;
+  for (const w of socialTerms) if (lower.includes(w)) scores.social += 2;
+  for (const w of literatureTerms) if (lower.includes(w)) scores.literature += 2;
+
+  let best: Exclude<SubjectId, 'all'> = 'general';
+  let bestScore = scores.general;
+  for (const subj of ['stem', 'business', 'social', 'literature'] as const) {
+    if (scores[subj] > bestScore) {
+      best = subj;
+      bestScore = scores[subj];
+    }
+  }
+  return best;
+}
+
 export function validateExtractionInput(input: SourceExtractionInput): {
   valid: boolean;
   error: string | null;
@@ -1011,14 +1287,14 @@ export function validateExtractionInput(input: SourceExtractionInput): {
     if (!fileName) {
       return {
         valid: false,
-        error: 'Please drop or select a valid PDF (.pdf) or Word (.docx) document for ingestion.',
+        error: 'Please drop or select a valid PDF (.pdf) or Word (.docx) document.',
       };
     }
     const lower = fileName.toLowerCase();
     if (!lower.endsWith('.pdf') && !lower.endsWith('.docx')) {
       return {
         valid: false,
-        error: 'Unsupported file format. Only .pdf and .docx academic documents are supported.',
+        error: 'Unsupported file format. Only .pdf and .docx documents are supported.',
       };
     }
   } else if (input.sourceFormat === 'url') {
@@ -1026,18 +1302,29 @@ export function validateExtractionInput(input: SourceExtractionInput): {
     if (!url || !/^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(url)) {
       return {
         valid: false,
-        error: 'Please enter a valid website reference URL starting with http:// or https://.',
+        error: 'Please enter a valid website URL starting with http:// or https://.',
       };
     }
   }
 
   const rawTrimmed = (input.rawContent || '').trim();
-  if (rawTrimmed.length < 30) {
+  if (rawTrimmed.length < 30 && !input.base64Data) {
     return {
       valid: false,
       error:
-        'Source extraction buffer must contain at least 30 characters of academic reference text.',
+        'Source text must contain at least 30 characters of readable text.',
     };
+  }
+
+  if (rawTrimmed.length >= 30) {
+    const cleaned = cleanSourceTextWithBackgroundWorker(rawTrimmed);
+    if (cleaned.clauses.length === 0) {
+      return {
+        valid: false,
+        error:
+          'Could not extract readable sentences from this source. Please upload a text-based PDF/DOCX or paste readable text.',
+      };
+    }
   }
 
   if (
@@ -1047,7 +1334,7 @@ export function validateExtractionInput(input: SourceExtractionInput): {
   ) {
     return {
       valid: false,
-      error: 'Target extraction count must be between 1 and 100 questions.',
+      error: 'Question count must be between 1 and 100.',
     };
   }
 
@@ -1059,19 +1346,31 @@ export function cleanSourceTextWithBackgroundWorker(rawText: string): WorkerSani
 
   // Strip PDF stream tokens, XML/DOCX markers, HTML tags, and non-printable control chars
   const artifactRegex =
-    /(%PDF-[0-9.]+|endobj|%%EOF|\[Binary Header Stripped\]|\[DOCX XML[^\]]*\]|<[^>]+>|[\x00-\x08\x0B\x0C\x0E-\x1F])/gi;
+    /(%PDF-[0-9.]+|\b\d+\s+\d+\s+obj\b|\bendobj\b|\bstream\b|\bendstream\b|\bxref\b|\btrailer\b|\bstartxref\b|%%EOF|\[Binary Header Stripped\]|\[DOCX XML[^\]]*\]|<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>|[\x00-\x08\x0B\x0C\x0E-\x1F])/gi;
   const matches = rawText.match(artifactRegex);
   const strippedArtifactsCount = matches ? matches.length : 0;
 
-  const cleanedText = rawText
+  const strippedText = rawText
     .replace(artifactRegex, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
     .trim();
 
-  const clauses = cleanedText
+  // Split into candidate sentences/clauses and retain ONLY genuine natural-language clauses
+  const candidateSegments = strippedText
     .split(/(?<=[.?!])\s+|\n+/)
-    .map((s) => s.replace(/^\d+\.\s*/, '').trim())
-    .filter((s) => s.length >= 20);
+    .map((s) => s.replace(/^\s*(?:\d+[\.)]|[-•*])\s*/, '').trim())
+    .filter((s) => s.length >= 18);
+
+  const clauses = candidateSegments.filter((seg) => isNaturalLanguageClause(seg));
+
+  const cleanedText =
+    clauses.length > 0
+      ? clauses.join(' ')
+      : strippedText
+          .split(/\s+/)
+          .filter((tok) => isNaturalLanguageWord(tok))
+          .join(' ');
 
   const cleanedChars = cleanedText.length;
   const estimatedTokens = Math.max(1, Math.ceil(cleanedChars / 4));
@@ -1144,58 +1443,6 @@ export function createInitialValidationChecks(
   ];
 }
 
-const STOP_WORDS = new Set([
-  'about',
-  'after',
-  'again',
-  'against',
-  'among',
-  'because',
-  'before',
-  'being',
-  'below',
-  'between',
-  'both',
-  'Could',
-  'during',
-  'each',
-  'from',
-  'further',
-  'having',
-  'into',
-  'more',
-  'most',
-  'other',
-  'over',
-  'same',
-  'should',
-  'some',
-  'such',
-  'than',
-  'that',
-  'their',
-  'them',
-  'then',
-  'there',
-  'these',
-  'they',
-  'this',
-  'those',
-  'through',
-  'under',
-  'until',
-  'very',
-  'what',
-  'when',
-  'where',
-  'which',
-  'while',
-  'with',
-  'within',
-  'without',
-  'would',
-]);
-
 function capitalizeFirst(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) return '';
@@ -1223,7 +1470,7 @@ function placeCorrectOptionAt(
 
   let padIdx = 1;
   while (uniqueDistractors.length < 3) {
-    const fallback = `Alternative interpretation #${padIdx} not supported by the text`;
+    const fallback = `Not stated in the provided source passage (#${padIdx})`;
     if (
       fallback.toLowerCase() !== cleanCorrect.toLowerCase() &&
       !uniqueDistractors.some((u) => u.toLowerCase() === fallback.toLowerCase())
@@ -1248,32 +1495,33 @@ function placeCorrectOptionAt(
 export function extractStructuredQuestionsFromCleanedText(params: {
   cleanedText: string;
   clauses: string[];
-  targetSubject: Exclude<SubjectId, 'all'>;
+  targetSubject?: Exclude<SubjectId, 'all'>;
   targetDifficulty: 'easy' | 'medium' | 'hard';
   questionCount: number;
   sourceLabel?: string;
 }): QuestionItem[] {
   const safeCount = Math.max(1, Math.min(100, Math.round(params.questionCount)));
-  const subjectMeta = SUBJECT_METADATA[params.targetSubject] || SUBJECT_METADATA.stem;
   const rawCleaned = (params.cleanedText || '').trim();
+  const resolvedSubject =
+    params.targetSubject || inferSubjectFromSourceText(rawCleaned);
+  const subjectMeta = SUBJECT_METADATA[resolvedSubject] || SUBJECT_METADATA.general;
 
-  // Segment the actual source text into factual statements
-  const primaryClauses =
+  // Segment the actual source text into verified natural-language statements
+  const primaryClauses = (
     params.clauses && params.clauses.length > 0
       ? params.clauses
       : rawCleaned
           .split(/(?<=[.?!;])\s+|\n+/)
           .map((s) => s.replace(/^\d+[\.)]\s*/, '').trim())
-          .filter((s) => s.length >= 15);
+  ).filter((s) => isNaturalLanguageClause(s));
 
-  // If the user entered a dense single paragraph with few periods, also split on comma-conjunctions
   const expandedClauses: string[] = [...primaryClauses];
   if (expandedClauses.length < safeCount) {
     for (const c of primaryClauses) {
       const subParts = c
         .split(/,\s+(?:and|while|whereas|which|where|so|but)\s+|;\s+/i)
         .map((s) => s.trim())
-        .filter((s) => s.length >= 20);
+        .filter((s) => isNaturalLanguageClause(s));
       for (const sp of subParts) {
         if (!expandedClauses.includes(sp)) {
           expandedClauses.push(sp);
@@ -1282,18 +1530,18 @@ export function extractStructuredQuestionsFromCleanedText(params: {
     }
   }
 
-  if (expandedClauses.length === 0 && rawCleaned.length > 0) {
-    expandedClauses.push(rawCleaned);
+  if (expandedClauses.length === 0) {
+    return [];
   }
 
-  // Extract distinct key terms and predicate phrases from the actual source document
+  // Extract distinct natural-language key terms and predicate phrases from the actual source document
   const docKeyTerms: string[] = [];
   const docPredicates: string[] = [];
 
   for (const sentence of expandedClauses) {
     const cleanSent = sentence.replace(/[.?!]+$/, '').trim();
     const relMatch = cleanSent.match(
-      /^([^,:;]{3,75}?)\s+(is defined as|refers to|is|are|was|were|means|produces|converts|synthesizes|captures|equals|represents|measures|consists of|requires|enables|prevents|regulates|generates|calculates|determines|states that|occurs when)\s+(.{10,145})$/i
+      /^([^,:;]{3,75}?)\s+(is defined as|refers to|is|are|was|were|means|produces|converts|synthesizes|captures|equals|represents|measures|consists of|requires|enables|prevents|regulates|generates|calculates|determines|states that|occurs when|characterizes|blends|indicates)\s+(.{10,145})$/i
     );
     if (relMatch) {
       const pred = capitalizeFirst(relMatch[3]);
@@ -1304,8 +1552,13 @@ export function extractStructuredQuestionsFromCleanedText(params: {
 
     const words = cleanSent
       .split(/\s+/)
-      .map((w) => w.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9%°/-]+$/g, ''))
-      .filter((w) => w.length >= 4 && !STOP_WORDS.has(w.toLowerCase()));
+      .map((w) => w.replace(/^[(\[{"'“”‘’]+|[.,;:?!)\]}"'“”‘’]+$/g, ''))
+      .filter(
+        (w) =>
+          w.length >= 4 &&
+          isNaturalLanguageWord(w) &&
+          !STOP_WORDS.has(w.toLowerCase())
+      );
 
     for (const w of words) {
       if (!docKeyTerms.some((t) => t.toLowerCase() === w.toLowerCase())) {
@@ -1317,18 +1570,17 @@ export function extractStructuredQuestionsFromCleanedText(params: {
   const generatedDrafts: CustomQuestionDraft[] = [];
 
   for (let i = 0; i < safeCount; i++) {
-    const clause = expandedClauses[i % expandedClauses.length] || rawCleaned;
+    const clause = expandedClauses[i % expandedClauses.length];
     const cleanSent = clause.replace(/[.?!]+$/, '').trim();
     const conciseClause = cleanSent.length > 150 ? `${cleanSent.slice(0, 147)}...` : cleanSent;
     const targetIndex = (i % 4) as 0 | 1 | 2 | 3;
 
-    // Determine whether this pass is a first-pass relationship question or a key-term cloze question
     const passNumber = Math.floor(i / Math.max(1, expandedClauses.length));
 
     const relMatch =
       passNumber === 0
         ? cleanSent.match(
-            /^([^,:;]{3,75}?)\s+(is defined as|refers to|is|are|was|were|means|produces|converts|synthesizes|captures|equals|represents|measures|consists of|requires|enables|prevents|regulates|generates|calculates|determines|states that|occurs when)\s+(.{10,140})$/i
+            /^([^,:;]{3,75}?)\s+(is defined as|refers to|is|are|was|were|means|produces|converts|synthesizes|captures|equals|represents|measures|consists of|requires|enables|prevents|regulates|generates|calculates|determines|states that|occurs when|characterizes|blends|indicates)\s+(.{10,140})$/i
           )
         : null;
 
@@ -1343,16 +1595,19 @@ export function extractStructuredQuestionsFromCleanedText(params: {
       const predRaw = capitalizeFirst((relMatch ? relMatch[3] : colonMatch![2]).trim());
 
       const topicWords = subjRaw
-        .replace(/^(the|a|an|in|on|at|for|by)\s+/i, '')
+        .replace(/^(the|a|an|in|on|at|for|by|when|under|if)\s+/i, '')
         .split(/\s+/)
-        .slice(0, 4)
+        .filter((w) => isNaturalLanguageWord(w))
+        .slice(0, 3)
         .join(' ');
       const topic = capitalizeFirst(topicWords || subjectMeta.shortLabel).slice(0, 48);
 
       const prompt =
         verbRaw === 'is' || verbRaw === 'are' || verbRaw === 'was' || verbRaw === 'were'
-          ? `According to the source material, what ${verbRaw} ${subjRaw}?`
-          : `According to the source text, how does the material describe what ${subjRaw} ${verbRaw}?`;
+          ? `According to the source text, what ${verbRaw} ${subjRaw}?`
+          : `According to the source text, what does ${subjRaw} ${
+              verbRaw.endsWith('s') ? verbRaw.slice(0, -1) : verbRaw
+            }?`;
 
       const otherPredicates = docPredicates.filter(
         (p) => p.toLowerCase() !== predRaw.toLowerCase()
@@ -1368,15 +1623,15 @@ export function extractStructuredQuestionsFromCleanedText(params: {
       const candidateDistractors = [
         ...otherPredicates,
         ...otherClauses,
-        `Unrelated to ${topic} according to the passage`,
+        `Unrelated to ${topic} in the source passage`,
         `The opposite of ${predRaw.slice(0, 80)}`,
-        `Excluded from ${subjectMeta.label} in the text`,
+        `Not supported by the source document`,
       ];
 
       const options = placeCorrectOptionAt(predRaw, candidateDistractors, targetIndex);
 
       generatedDrafts.push({
-        subject: params.targetSubject,
+        subject: resolvedSubject,
         topic: topic.length >= 3 ? topic : subjectMeta.shortLabel,
         difficultyTier: params.targetDifficulty,
         prompt: prompt.slice(0, 260),
@@ -1385,11 +1640,16 @@ export function extractStructuredQuestionsFromCleanedText(params: {
         explanation: `From the source text: "${conciseClause}."`,
       });
     } else {
-      // Key-term / factual cloze question directly grounded in the sentence
+      // Key-term comprehension question grounded strictly in verified natural-language words
       const sentenceWords = cleanSent
         .split(/\s+/)
-        .map((w) => w.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9%°/-]+$/g, ''))
-        .filter((w) => w.length >= 4 && !STOP_WORDS.has(w.toLowerCase()));
+        .map((w) => w.replace(/^[(\[{"'“”‘’]+|[.,;:?!)\]}"'“”‘’]+$/g, ''))
+        .filter(
+          (w) =>
+            w.length >= 4 &&
+            isNaturalLanguageWord(w) &&
+            !STOP_WORDS.has(w.toLowerCase())
+        );
 
       const chosenTerm =
         sentenceWords.length > 0
@@ -1401,15 +1661,14 @@ export function extractStructuredQuestionsFromCleanedText(params: {
 
       const prompt =
         blankedSentence !== cleanSent
-          ? `Based on the source text, which term best completes the statement: "${
+          ? `Complete the statement from the source text: "${
               blankedSentence.length > 180 ? `${blankedSentence.slice(0, 177)}...` : blankedSentence
-            }"?`
-          : `According to the passage ("${conciseClause}"), which key concept is directly referenced?`;
+            }"`
+          : `Which concept is directly discussed in the statement: "${conciseClause}"?`;
 
       const otherTerms = docKeyTerms.filter(
-        (t) => t.toLowerCase() !== chosenTerm.toLowerCase()
+        (t) => t.toLowerCase() !== chosenTerm.toLowerCase() && isNaturalLanguageWord(t)
       );
-      // Offset the slice of otherTerms by i so multiple questions get varied distractors
       const rotatedTerms = [
         ...otherTerms.slice(i % Math.max(1, otherTerms.length)),
         ...otherTerms.slice(0, i % Math.max(1, otherTerms.length)),
@@ -1427,18 +1686,24 @@ export function extractStructuredQuestionsFromCleanedText(params: {
       const candidateDistractors = [
         ...numericDistractors,
         ...rotatedTerms,
-        'None of the mentioned terms',
-        'Unlisted reference variable',
-        'External baseline constant',
+        'None of these options',
+        'Not mentioned in the text',
+        'Unsupported assumption',
       ];
 
       const options = placeCorrectOptionAt(chosenTerm, candidateDistractors, targetIndex);
-      const topicTerm = capitalizeFirst(
-        sentenceWords[0] || chosenTerm || subjectMeta.shortLabel
-      ).slice(0, 48);
+      const topicWords = sentenceWords
+        .filter((w) => /^[A-Za-z]+$/.test(w))
+        .slice(0, 2)
+        .map((w) => capitalizeFirst(w))
+        .join(' ');
+      const topicTerm = (topicWords || capitalizeFirst(chosenTerm) || subjectMeta.shortLabel).slice(
+        0,
+        48
+      );
 
       generatedDrafts.push({
-        subject: params.targetSubject,
+        subject: resolvedSubject,
         topic: topicTerm.length >= 3 ? topicTerm : subjectMeta.shortLabel,
         difficultyTier: params.targetDifficulty,
         prompt: prompt.slice(0, 260),
@@ -1453,6 +1718,7 @@ export function extractStructuredQuestionsFromCleanedText(params: {
     buildQuestionItemFromDraft(draft, `extracted-${Date.now()}-${idx + 1}`)
   );
 }
+
 
 
 

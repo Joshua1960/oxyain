@@ -9,14 +9,13 @@ import {
   ExtractionSourceFormat,
   ExtractionValidationCheck,
   QuestionItem,
-  SUBJECT_METADATA,
   SharingVisibility,
-  SubjectId,
   WorkerSanitizationMetrics,
   cleanSourceTextWithBackgroundWorker,
   createInitialValidationChecks,
   extractStructuredQuestionsFromCleanedText,
   generateBankShareCode,
+  inferSubjectFromSourceText,
   validateCustomQuestionDraft,
   validateExtractionInput,
 } from '../game/questions';
@@ -32,51 +31,6 @@ interface Scr10AiSourceExtractionConsoleProps {
 }
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const;
-const SUBJECT_CHOICES: Exclude<SubjectId, 'all'>[] = [
-  'stem',
-  'business',
-  'social',
-  'literature',
-  'general',
-];
-
-function extractActualTextFromUploadedBuffer(
-  rawText: string,
-  format: ExtractionSourceFormat,
-  uploadedFileName: string
-): string {
-  // 1. Check for Word XML <w:t> text runs if rawText contains XML
-  const xmlTextMatches = Array.from(rawText.matchAll(/<w:t[^>]*>([^<]+)<\/w:t>/g))
-    .map((m) => m[1].trim())
-    .filter(Boolean);
-  if (xmlTextMatches.length >= 3) {
-    return xmlTextMatches.join(' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
-  }
-
-  // 2. Check for PDF literal text strings inside parentheses (...) if PDF header is detected
-  if (format === 'pdf' && rawText.startsWith('%PDF')) {
-    const pdfParens = Array.from(rawText.matchAll(/\(([^()\\]{3,200})\)/g))
-      .map((m) => m[1].replace(/[^\x20-\x7E]/g, ' ').trim())
-      .filter((s) => /[A-Za-z]{3,}/.test(s));
-    if (pdfParens.length >= 4) {
-      return pdfParens.join(' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
-    }
-  }
-
-  // 3. Extract readable UTF-8 / ASCII text lines directly from the uploaded file
-  const printableLines = rawText
-    .replace(/[^\x20-\x7E\n\r]/g, ' ')
-    .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, ' ').trim())
-    .filter((line) => line.length >= 4 && /[A-Za-z]{2,}/.test(line));
-
-  const joined = printableLines.join('\n').trim();
-  if (joined.length > 0) {
-    return joined.slice(0, 8000);
-  }
-
-  return `${uploadedFileName.replace(/\.(pdf|docx)$/i, '').replace(/[_-]+/g, ' ')}`;
-}
 
 export const Scr10AiSourceExtractionConsole: React.FC<
   Scr10AiSourceExtractionConsoleProps
@@ -94,12 +48,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
   const [sourceFormat, setSourceFormat] = useState<ExtractionSourceFormat>('pdf');
   const [fileName, setFileName] = useState<string>('');
   const [fileSizeBytes, setFileSizeBytes] = useState<number>(0);
+  const [base64Data, setBase64Data] = useState<string>('');
   const [websiteUrl, setWebsiteUrl] = useState<string>('');
   const [rawContent, setRawContent] = useState<string>('');
 
-  const [targetSubject, setTargetSubject] = useState<Exclude<SubjectId, 'all'>>(
-    'stem'
-  );
   const [targetDifficulty, setTargetDifficulty] = useState<
     'easy' | 'medium' | 'hard'
   >('medium');
@@ -108,6 +60,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
     useState<AiParserEngineId>('gemini-3.8-flash');
 
   const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
+  const [isParsingFile, setIsParsingFile] = useState<boolean>(false);
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [pipelinePhaseLabel, setPipelinePhaseLabel] = useState<string>(
@@ -204,27 +157,91 @@ export const Scr10AiSourceExtractionConsole: React.FC<
     setBankTitle(
       `${name.replace(/\.(pdf|docx)$/i, '').replace(/[_-]+/g, ' ')} Questions`
     );
+    setIsParsingFile(true);
+    setPipelinePhaseLabel(`Reading ${name}...`);
 
     const reader = new FileReader();
-    reader.onload = () => {
-      const rawResult = typeof reader.result === 'string' ? reader.result : '';
-      const resolvedText = extractActualTextFromUploadedBuffer(
-        rawResult,
-        detectedFormat,
-        name
-      );
+    reader.onload = async () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      setBase64Data(dataUrl);
 
-      setRawContent(resolvedText);
-      setWorkerMetrics(cleanSourceTextWithBackgroundWorker(resolvedText));
-      setValidationChecks(
-        createInitialValidationChecks(detectedFormat, parserEngine)
-      );
-      setProgressPercent(0);
-      setPipelinePhaseLabel(
-        `Loaded ${name} (${Math.max(1, Math.round((file.size || 1024) / 1024))} KB) · Ready to extract`
-      );
+      try {
+        const response = await fetch('/api/parse-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            format: detectedFormat,
+            fileName: name,
+            base64Data: dataUrl,
+          }),
+        });
+        const data = await response.json();
+        if (response.ok && typeof data.extractedText === 'string' && data.extractedText.trim().length > 0) {
+          setRawContent(data.extractedText);
+          setWorkerMetrics(
+            data.workerMetrics || cleanSourceTextWithBackgroundWorker(data.extractedText)
+          );
+          setValidationChecks(
+            createInitialValidationChecks(detectedFormat, parserEngine)
+          );
+          setProgressPercent(0);
+          setPipelinePhaseLabel(
+            `Loaded ${name} (${Math.max(1, Math.round((file.size || 1024) / 1024))} KB) · Ready to extract`
+          );
+        } else {
+          setRawContent('');
+          setWorkerMetrics(null);
+          setErrorMessage(
+            data?.error ||
+              'Could not extract readable text from this file. Please upload a text-based PDF/DOCX or paste your text below.'
+          );
+          setPipelinePhaseLabel('Paste readable text below to extract questions.');
+        }
+      } catch {
+        setErrorMessage(
+          'Could not parse binary document. Please paste your document text below.'
+        );
+      } finally {
+        setIsParsingFile(false);
+      }
     };
-    reader.readAsText(file);
+    reader.readAsDataURL(file);
+  };
+
+  const handleFetchWebsiteText = async () => {
+    if (!websiteUrl.trim()) {
+      setErrorMessage('Please enter a website URL first.');
+      return;
+    }
+    setErrorMessage(null);
+    setIsParsingFile(true);
+    setPipelinePhaseLabel(`Fetching text from ${websiteUrl}...`);
+    try {
+      const response = await fetch('/api/parse-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          format: 'url',
+          websiteUrl: websiteUrl.trim(),
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && typeof data.extractedText === 'string' && data.extractedText.trim().length > 0) {
+        setRawContent(data.extractedText);
+        setWorkerMetrics(
+          data.workerMetrics || cleanSourceTextWithBackgroundWorker(data.extractedText)
+        );
+        setPipelinePhaseLabel('Website text loaded · Ready to extract');
+      } else {
+        setErrorMessage(
+          data?.error || 'Could not fetch text from this URL. You can paste the article text directly below.'
+        );
+      }
+    } catch {
+      setErrorMessage('Could not reach website URL. Paste the article text directly below.');
+    } finally {
+      setIsParsingFile(false);
+    }
   };
 
   const handleDropFile = (e: React.DragEvent<HTMLDivElement>) => {
@@ -251,13 +268,41 @@ export const Scr10AiSourceExtractionConsole: React.FC<
         ? `document.${sourceFormat}`
         : fileName;
 
+    let activeRawContent = rawContent;
+
+    // If URL mode and rawContent is empty, fetch the URL text first
+    if (sourceFormat === 'url' && activeRawContent.trim().length < 30 && websiteUrl.trim()) {
+      try {
+        const parsedResp = await fetch('/api/parse-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            format: 'url',
+            websiteUrl: websiteUrl.trim(),
+          }),
+        });
+        if (parsedResp.ok) {
+          const parsedData = await parsedResp.json();
+          if (typeof parsedData.extractedText === 'string' && parsedData.extractedText.trim().length >= 30) {
+            activeRawContent = parsedData.extractedText;
+            setRawContent(activeRawContent);
+          }
+        }
+      } catch {
+        // Handled by validation below
+      }
+    }
+
+    const inferredSubject = inferSubjectFromSourceText(activeRawContent);
+
     const inputPayload = {
       sourceFormat,
       fileName: sourceFormat === 'url' ? undefined : effectiveFileName,
-      fileSizeBytes: sourceFormat === 'url' ? undefined : fileSizeBytes || rawContent.length,
+      fileSizeBytes: sourceFormat === 'url' ? undefined : fileSizeBytes || activeRawContent.length,
       websiteUrl: sourceFormat === 'url' ? websiteUrl : undefined,
-      rawContent,
-      targetSubject,
+      rawContent: activeRawContent,
+      base64Data: sourceFormat !== 'url' && base64Data ? base64Data : undefined,
+      targetSubject: inferredSubject,
       targetDifficulty,
       questionCount,
       parserEngine,
@@ -283,10 +328,9 @@ export const Scr10AiSourceExtractionConsole: React.FC<
     }
 
     setIsExtracting(true);
-    const localWorkerMetrics = cleanSourceTextWithBackgroundWorker(rawContent);
+    let localWorkerMetrics = cleanSourceTextWithBackgroundWorker(activeRawContent);
     setWorkerMetrics(localWorkerMetrics);
 
-    // Stage 1: File / URL Ingestion Check (25%)
     // Stage 1: File / URL Check (25%)
     const stage1Checks = initialChecks.map((c, idx) =>
       idx === 0
@@ -338,6 +382,11 @@ export const Scr10AiSourceExtractionConsole: React.FC<
       });
       if (response.ok) {
         const data = await response.json();
+        if (typeof data.extractedText === 'string' && data.extractedText.trim().length > 0 && activeRawContent.trim().length < 30) {
+          setRawContent(data.extractedText);
+          localWorkerMetrics = cleanSourceTextWithBackgroundWorker(data.extractedText);
+          setWorkerMetrics(localWorkerMetrics);
+        }
         if (Array.isArray(data.questions) && data.questions.length > 0) {
           resolvedQuestions = data.questions;
         }
@@ -350,7 +399,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
       resolvedQuestions = extractStructuredQuestionsFromCleanedText({
         cleanedText: localWorkerMetrics.cleanedText,
         clauses: localWorkerMetrics.clauses,
-        targetSubject,
+        targetSubject: inferredSubject,
         targetDifficulty,
         questionCount,
         sourceLabel: sourceFormat === 'url' ? websiteUrl : effectiveFileName,
@@ -424,17 +473,15 @@ export const Scr10AiSourceExtractionConsole: React.FC<
   };
 
   const buildCurrentExtractedBank = (): CustomQuestionBank | null => {
+    const cleaned = workerMetrics || cleanSourceTextWithBackgroundWorker(rawContent);
+    const inferredSubject = inferSubjectFromSourceText(cleaned.cleanedText);
     const questionsToUse =
       extractedQuestions.length > 0
         ? extractedQuestions
         : extractStructuredQuestionsFromCleanedText({
-            cleanedText:
-              workerMetrics?.cleanedText ||
-              cleanSourceTextWithBackgroundWorker(rawContent).cleanedText,
-            clauses:
-              workerMetrics?.clauses ||
-              cleanSourceTextWithBackgroundWorker(rawContent).clauses,
-            targetSubject,
+            cleanedText: cleaned.cleanedText,
+            clauses: cleaned.clauses,
+            targetSubject: inferredSubject,
             targetDifficulty,
             questionCount,
           });
@@ -457,7 +504,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
       description: `Extracted from ${
         sourceFormat === 'url' ? websiteUrl || 'Website URL' : fileName || 'Source Text'
       }.`,
-      subject: targetSubject,
+      subject: questionsToUse[0]?.subject || inferredSubject,
       difficultyTier: targetDifficulty,
       visibility: bankVisibility,
       shareCode: generateBankShareCode(),
@@ -602,7 +649,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                   className="hidden"
                 />
                 <div className="text-xs font-mono text-cyan-300 font-bold mb-1">
-                  Upload PDF or DOCX File
+                  {isParsingFile ? 'Reading Document...' : 'Upload PDF or DOCX File'}
                 </div>
                 <div className="text-xs text-slate-300 mb-2">
                   Drag and drop or click to browse
@@ -627,18 +674,29 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                 >
                   Website URL
                 </label>
-                <input
-                  id="website-reference-url"
-                  data-testid="website-url-input"
-                  type="url"
-                  value={websiteUrl}
-                  onChange={(e) => {
-                    setWebsiteUrl(e.target.value);
-                    setErrorMessage(null);
-                  }}
-                  placeholder="https://example.edu/article"
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
-                />
+                <div className="flex gap-2">
+                  <input
+                    id="website-reference-url"
+                    data-testid="website-url-input"
+                    type="url"
+                    value={websiteUrl}
+                    onChange={(e) => {
+                      setWebsiteUrl(e.target.value);
+                      setErrorMessage(null);
+                    }}
+                    placeholder="https://example.edu/article"
+                    className="flex-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
+                  />
+                  <button
+                    type="button"
+                    data-testid="fetch-url-text-btn"
+                    disabled={isParsingFile}
+                    onClick={handleFetchWebsiteText}
+                    className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-cyan-300 whitespace-nowrap cursor-pointer"
+                  >
+                    {isParsingFile ? 'Loading...' : 'Load URL'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -671,7 +729,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               />
             </div>
 
-            {/* AI Model & Question Count */}
+            {/* AI Model, Question Count & Difficulty (No Subject Selector — derived from source) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <span className="block text-xs font-semibold text-slate-300 mb-1">
@@ -729,52 +787,26 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="extract-subject-select"
-                  className="block text-xs font-semibold text-slate-300 mb-1"
-                >
-                  Subject
-                </label>
-                <select
-                  id="extract-subject-select"
-                  data-testid="extract-subject-select"
-                  value={targetSubject}
-                  onChange={(e) =>
-                    setTargetSubject(e.target.value as Exclude<SubjectId, 'all'>)
-                  }
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white"
-                >
-                  {SUBJECT_CHOICES.map((subj) => (
-                    <option key={subj} value={subj}>
-                      {SUBJECT_METADATA[subj].label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <span className="block text-xs font-semibold text-slate-300 mb-1">
-                  Difficulty
-                </span>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(['easy', 'medium', 'hard'] as const).map((tier) => (
-                    <button
-                      key={tier}
-                      type="button"
-                      data-testid={`extract-diff-${tier}-btn`}
-                      onClick={() => setTargetDifficulty(tier)}
-                      className={`py-1.5 rounded-lg border text-xs font-semibold capitalize cursor-pointer ${
-                        targetDifficulty === tier
-                          ? 'bg-emerald-500/20 border-emerald-400 text-white'
-                          : 'bg-slate-900 border-slate-800 text-slate-300'
-                      }`}
-                    >
-                      {tier}
-                    </button>
-                  ))}
-                </div>
+            <div>
+              <span className="block text-xs font-semibold text-slate-300 mb-1">
+                Difficulty
+              </span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(['easy', 'medium', 'hard'] as const).map((tier) => (
+                  <button
+                    key={tier}
+                    type="button"
+                    data-testid={`extract-diff-${tier}-btn`}
+                    onClick={() => setTargetDifficulty(tier)}
+                    className={`py-1.5 rounded-lg border text-xs font-semibold capitalize cursor-pointer ${
+                      targetDifficulty === tier
+                        ? 'bg-emerald-500/20 border-emerald-400 text-white'
+                        : 'bg-slate-900 border-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {tier}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -791,7 +823,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
             <button
               type="button"
               data-testid="run-ai-extraction-btn"
-              disabled={isExtracting}
+              disabled={isExtracting || isParsingFile}
               onClick={handleRunExtractionPipeline}
               className="w-full py-2.5 px-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 text-slate-950 font-bold font-display text-sm transition-colors cursor-pointer"
             >

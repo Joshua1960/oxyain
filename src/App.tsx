@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActiveRoomSummary,
+  AppRouteId,
   AuthMode,
   AuthenticatedSession,
   CompetitorCount,
@@ -19,6 +20,7 @@ import {
   SportDiscipline,
   StakeholderRole,
   VelocityPreset,
+  buildUrlForRoute,
   createInitialQueueState,
   createMatchState,
   evaluateLobbyAccess,
@@ -29,6 +31,7 @@ import {
   pairQueueOpponent,
   reconstructMatchAtReplayStep,
   recordLaneAdjustmentEvent,
+  resolveRouteFromLocation,
   stepMatchSimulation,
   stepQueueTimer,
   submitMatchAnswer,
@@ -56,25 +59,21 @@ import { QuickMatchQueueModal } from './components/QuickMatchQueueModal';
 import { WaitingRoomModal } from './components/WaitingRoomModal';
 
 export default function App() {
-  const searchParams =
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const isAutostart = searchParams?.get('autostart') === '1';
-  const isGeneratorDirect = searchParams?.get('screen') === 'generator';
-  const isExtractorDirect =
-    searchParams?.get('screen') === 'extractor' || searchParams?.get('screen') === 'scr10';
-  const isLobbyDirect =
-    searchParams?.get('screen') === 'lobby' ||
-    isGeneratorDirect ||
-    isExtractorDirect ||
-    Boolean(searchParams?.get('room'));
-  const initialRoomFromUrl = searchParams?.get('room')?.trim().toUpperCase();
-  const initialPlayerFromUrl = searchParams?.get('player')?.trim();
+  const initialResolved =
+    typeof window !== 'undefined'
+      ? resolveRouteFromLocation(window.location.pathname, window.location.search)
+      : { route: 'landing' as AppRouteId, autostart: false };
 
+  const [activeRoute, setActiveRoute] = useState<AppRouteId>(initialResolved.route);
   const [showPublicPortal, setShowPublicPortal] = useState<boolean>(
-    !isAutostart && !isLobbyDirect
+    initialResolved.route === 'landing'
   );
-  const [isGeneratorOpen, setIsGeneratorOpen] = useState<boolean>(isGeneratorDirect);
-  const [isExtractorOpen, setIsExtractorOpen] = useState<boolean>(isExtractorDirect);
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState<boolean>(
+    initialResolved.route === 'generator'
+  );
+  const [isExtractorOpen, setIsExtractorOpen] = useState<boolean>(
+    initialResolved.route === 'extractor'
+  );
   const [session, setSession] = useState<AuthenticatedSession | null>(null);
   const [authModalState, setAuthModalState] = useState<{
     isOpen: boolean;
@@ -98,21 +97,27 @@ export default function App() {
     null
   );
 
-  const [sport, setSport] = useState<SportDiscipline>('racing');
+  const [sport, setSport] = useState<SportDiscipline>(initialResolved.sport || 'racing');
   const [subject, setSubject] = useState<SubjectId>('stem');
   const [questionDifficulty, setQuestionDifficulty] = useState<QuestionDifficultyId>('easy');
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [matchLength, setMatchLength] = useState<MatchLengthId>('sprint');
-  const [mode, setMode] = useState<MultiplayerMode>('custom');
-  const [competitorCount, setCompetitorCount] = useState<CompetitorCount>(4);
+  const [mode, setMode] = useState<MultiplayerMode>(
+    initialResolved.route === 'matchmaking' ? 'quickplay' : 'custom'
+  );
+  const [competitorCount, setCompetitorCount] = useState<CompetitorCount>(
+    initialResolved.route === 'matchmaking' ? 2 : 4
+  );
   const [rivalDifficulty, setRivalDifficulty] = useState<RivalDifficulty>('standard');
   const [velocityPreset, setVelocityPreset] = useState<VelocityPreset>('standard');
   const [roomCodeInput, setRoomCodeInput] = useState<string>(
-    initialRoomFromUrl && isValidRoomCode(initialRoomFromUrl) ? initialRoomFromUrl : 'RACE-101'
+    initialResolved.roomCode || 'RACE-101'
   );
   const [roomCodeError, setRoomCodeError] = useState<string | null>(null);
   const [proGateNotice, setProGateNotice] = useState<string | null>(null);
-  const [isCurriculumOpen, setIsCurriculumOpen] = useState(false);
+  const [isCurriculumOpen, setIsCurriculumOpen] = useState(
+    initialResolved.route === 'curriculum'
+  );
   const [muted, setMuted] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [activeRoomsCount, setActiveRoomsCount] = useState(0);
@@ -120,36 +125,42 @@ export default function App() {
   const [liveRoomPeers, setLiveRoomPeers] = useState<LiveRoomPeer[]>([]);
   const [hasLiveRemotePeer, setHasLiveRemotePeer] = useState(false);
   const [replayStepIndex, setReplayStepIndex] = useState<number>(0);
-  const [isQueueModalOpen, setIsQueueModalOpen] = useState<boolean>(false);
+  const [isQueueModalOpen, setIsQueueModalOpen] = useState<boolean>(
+    initialResolved.route === 'matchmaking'
+  );
   const [queueState, setQueueState] = useState<MatchmakingQueueState>(() =>
     createInitialQueueState()
   );
-  const [isWaitingRoomOpen, setIsWaitingRoomOpen] = useState<boolean>(false);
+  const [isWaitingRoomOpen, setIsWaitingRoomOpen] = useState<boolean>(
+    initialResolved.route === 'waiting-room'
+  );
   const [localIsReady, setLocalIsReady] = useState<boolean>(true);
   const [isLocalHost, setIsLocalHost] = useState<boolean>(true);
 
   const clientPlayerIdRef = useRef<string>(`p-${Math.random().toString(36).slice(2, 9)}`);
   const defaultGuestCallsignRef = useRef<string>(
-    initialPlayerFromUrl || `Contender-${clientPlayerIdRef.current.slice(-3).toUpperCase()}`
+    initialResolved.player || `Contender-${clientPlayerIdRef.current.slice(-3).toUpperCase()}`
   );
 
   const [match, setMatch] = useState<MatchState>(() => {
     const initial = createMatchState({
-      sport: 'racing',
+      sport: initialResolved.sport || 'racing',
       subject: 'stem',
       questionDifficulty: 'easy',
       questionCount: 5,
       matchLength: 'sprint',
       mode: 'custom',
-      roomCode:
-        initialRoomFromUrl && isValidRoomCode(initialRoomFromUrl)
-          ? initialRoomFromUrl
-          : 'RACE-101',
+      roomCode: initialResolved.roomCode || 'RACE-101',
       competitorCount: 4,
     });
     return {
       ...initial,
-      status: isAutostart ? 'playing' : 'title',
+      status:
+        initialResolved.route === 'play'
+          ? 'playing'
+          : initialResolved.route === 'replay'
+          ? 'replay'
+          : 'title',
     };
   });
 
@@ -179,10 +190,146 @@ export default function App() {
     selectedRaceBank,
   };
 
-  // Sync document.body.dataset.state to game state machine ('title', 'playing', 'paused', 'gameover', 'replay')
+  // Canonical route transition helper with History API sync
+  const navigateToRoute = useCallback(
+    (
+      targetRoute: AppRouteId,
+      options?: {
+        roomCode?: string;
+        sport?: SportDiscipline;
+        replace?: boolean;
+        skipHistoryPush?: boolean;
+      }
+    ) => {
+      setActiveRoute(targetRoute);
+      document.body.dataset.route = targetRoute;
+
+      if (options?.sport) {
+        setSport(options.sport);
+      }
+      if (options?.roomCode && isValidRoomCode(options.roomCode)) {
+        setRoomCodeInput(options.roomCode.trim().toUpperCase());
+      }
+
+      if (!options?.skipHistoryPush && typeof window !== 'undefined') {
+        const nextUrl = buildUrlForRoute(targetRoute, {
+          roomCode: options?.roomCode,
+          sport: options?.sport,
+        });
+        const currentUrl = `${window.location.pathname}${window.location.search}`;
+        if (currentUrl !== nextUrl) {
+          if (options?.replace) {
+            window.history.replaceState({ route: targetRoute }, '', nextUrl);
+          } else {
+            window.history.pushState({ route: targetRoute }, '', nextUrl);
+          }
+        }
+      }
+
+      switch (targetRoute) {
+        case 'landing':
+          setShowPublicPortal(true);
+          setIsGeneratorOpen(false);
+          setIsExtractorOpen(false);
+          setIsWaitingRoomOpen(false);
+          setIsQueueModalOpen(false);
+          setIsCurriculumOpen(false);
+          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          break;
+        case 'lobby':
+          setShowPublicPortal(false);
+          setIsGeneratorOpen(false);
+          setIsExtractorOpen(false);
+          setIsWaitingRoomOpen(false);
+          setIsQueueModalOpen(false);
+          setIsCurriculumOpen(false);
+          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          break;
+        case 'waiting-room':
+          setShowPublicPortal(false);
+          setIsGeneratorOpen(false);
+          setIsExtractorOpen(false);
+          setIsQueueModalOpen(false);
+          setIsCurriculumOpen(false);
+          setMode('custom');
+          setIsWaitingRoomOpen(true);
+          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          break;
+        case 'matchmaking':
+          setShowPublicPortal(false);
+          setIsGeneratorOpen(false);
+          setIsExtractorOpen(false);
+          setIsWaitingRoomOpen(false);
+          setIsCurriculumOpen(false);
+          setMode('quickplay');
+          setIsQueueModalOpen(true);
+          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          break;
+        case 'generator':
+          setShowPublicPortal(false);
+          setIsExtractorOpen(false);
+          setIsWaitingRoomOpen(false);
+          setIsQueueModalOpen(false);
+          setIsCurriculumOpen(false);
+          setIsGeneratorOpen(true);
+          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          break;
+        case 'extractor':
+          setShowPublicPortal(false);
+          setIsGeneratorOpen(false);
+          setIsWaitingRoomOpen(false);
+          setIsQueueModalOpen(false);
+          setIsCurriculumOpen(false);
+          setIsExtractorOpen(true);
+          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          break;
+        case 'curriculum':
+          setIsCurriculumOpen(true);
+          break;
+        case 'play':
+          setShowPublicPortal(false);
+          setIsGeneratorOpen(false);
+          setIsExtractorOpen(false);
+          setIsWaitingRoomOpen(false);
+          setIsQueueModalOpen(false);
+          setIsCurriculumOpen(false);
+          break;
+        case 'replay':
+          setShowPublicPortal(false);
+          setIsGeneratorOpen(false);
+          setIsExtractorOpen(false);
+          setIsWaitingRoomOpen(false);
+          setIsQueueModalOpen(false);
+          setIsCurriculumOpen(false);
+          break;
+      }
+    },
+    []
+  );
+
+  // Sync document.body.dataset.state & listen for browser Back/Forward navigation
   useEffect(() => {
     document.body.dataset.state = match.status;
-  }, [match.status]);
+    document.body.dataset.route = activeRoute;
+  }, [match.status, activeRoute]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const resolved = resolveRouteFromLocation(window.location.pathname, window.location.search);
+      navigateToRoute(resolved.route, {
+        roomCode: resolved.roomCode,
+        sport: resolved.sport,
+        skipHistoryPush: true,
+      });
+      if (resolved.route === 'play') {
+        setMatch((prev) => ({ ...prev, status: 'playing' }));
+      } else if (resolved.route === 'replay') {
+        setMatch((prev) => ({ ...prev, status: 'replay' }));
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [navigateToRoute]);
 
   // Connect to WebSocket server & listen for room:state, directory:update, room:match_started, and opponent:telemetry
   useEffect(() => {
@@ -264,13 +411,15 @@ export default function App() {
               remotePeers,
             });
 
-            setShowPublicPortal(false);
-            setIsWaitingRoomOpen(false);
-            setIsQueueModalOpen(false);
+            navigateToRoute('play', {
+              roomCode: msg.roomCode || 'RACE-101',
+              sport: msg.sport || 'racing',
+            });
             document.body.dataset.state = 'playing';
             setReplayStepIndex(0);
             setMatch(syncedMatch);
           } else if (msg.type === 'room:match_terminated') {
+            navigateToRoute('lobby', { roomCode: msg.roomCode || roomCodeInput });
             document.body.dataset.state = 'title';
             setMatch((prev) => terminateMatchByHost(prev, true));
           } else if (msg.type === 'queue:status') {
@@ -317,9 +466,7 @@ export default function App() {
                   : undefined,
               });
               setRoomCodeInput(pairedRoom);
-              setIsQueueModalOpen(false);
-              setIsWaitingRoomOpen(false);
-              setShowPublicPortal(false);
+              navigateToRoute('play', { roomCode: pairedRoom, sport: cfg.sport });
               document.body.dataset.state = 'playing';
               setReplayStepIndex(0);
               setMatch(nextMatch);
@@ -536,11 +683,7 @@ export default function App() {
       customQuestions: selectedRaceBank ? selectedRaceBank.questions : undefined,
     });
 
-    setShowPublicPortal(false);
-    setIsGeneratorOpen(false);
-    setIsExtractorOpen(false);
-    setIsQueueModalOpen(false);
-    setIsWaitingRoomOpen(false);
+    navigateToRoute('play', { roomCode: activeCode, sport });
     document.body.dataset.state = 'playing';
     setReplayStepIndex(0);
     setMatch(nextMatch);
@@ -591,6 +734,7 @@ export default function App() {
     session,
     liveRoomPeers,
     selectedRaceBank,
+    navigateToRoute,
   ]);
 
   const handleLaunchRaceWithCustomBank = useCallback(
@@ -609,9 +753,7 @@ export default function App() {
       setQuestionDifficulty(bank.difficultyTier);
       setQuestionCount(bankQCount);
       setMatchLength(inferredLen);
-      setIsGeneratorOpen(false);
-      setIsExtractorOpen(false);
-      setShowPublicPortal(false);
+      navigateToRoute('play', { roomCode: activeCode, sport });
 
       const nextMatch = createMatchState({
         sport,
@@ -642,6 +784,7 @@ export default function App() {
       rivalDifficulty,
       velocityPreset,
       liveRoomPeers,
+      navigateToRoute,
     ]
   );
 
@@ -683,19 +826,22 @@ export default function App() {
 
   const handleLaunchReplayArena = useCallback(() => {
     setReplayStepIndex(0);
+    navigateToRoute('replay');
     setMatch((prev) => ({
       ...prev,
       status: 'replay',
     }));
-  }, []);
+  }, [navigateToRoute]);
 
   const handleExitAndFlushReplay = useCallback(() => {
     setReplayStepIndex(0);
+    navigateToRoute('play', { roomCode: match.roomCode, sport: match.sport });
     setMatch((prev) => flushReplayMemory(prev));
-  }, []);
+  }, [navigateToRoute, match.roomCode, match.sport]);
 
   const handleQuitGameByHost = useCallback(() => {
     if (!isLocalHost) return;
+    navigateToRoute('lobby', { roomCode: match.roomCode });
     document.body.dataset.state = 'title';
     setMatch((prev) => terminateMatchByHost(prev, isLocalHost));
     const ws = wsRef.current;
@@ -707,7 +853,7 @@ export default function App() {
         })
       );
     }
-  }, [isLocalHost, match.roomCode]);
+  }, [isLocalHost, match.roomCode, navigateToRoute]);
 
   // 1v1 Matchmaking Queue timer & handlers
   useEffect(() => {
@@ -736,7 +882,7 @@ export default function App() {
     setProGateNotice(null);
     setMode('quickplay');
     setQueueState(createInitialQueueState());
-    setIsQueueModalOpen(true);
+    navigateToRoute('matchmaking');
 
     const ws = wsRef.current;
     const playerName = session ? session.fullName : defaultGuestCallsignRef.current;
@@ -754,7 +900,7 @@ export default function App() {
         })
       );
     }
-  }, [questionCount, session, sport, subject, questionDifficulty]);
+  }, [questionCount, session, sport, subject, questionDifficulty, navigateToRoute]);
 
   const handleForcePairNow = useCallback(() => {
     const ws = wsRef.current;
@@ -781,8 +927,8 @@ export default function App() {
         })
       );
     }
-    setIsQueueModalOpen(false);
-  }, []);
+    navigateToRoute('lobby');
+  }, [navigateToRoute]);
 
   const handleOpenWaitingRoom = useCallback(() => {
     if (!isValidRoomCode(roomCodeInput)) {
@@ -810,7 +956,7 @@ export default function App() {
     setProGateNotice(null);
     setMode('custom');
     setLocalIsReady(true);
-    setIsWaitingRoomOpen(true);
+    navigateToRoute('waiting-room', { roomCode: roomCodeInput.trim().toUpperCase() });
   }, [
     roomCodeInput,
     questionCount,
@@ -818,6 +964,7 @@ export default function App() {
     competitorCount,
     rivalDifficulty,
     velocityPreset,
+    navigateToRoute,
   ]);
 
   const handleToggleWaitingRoomReady = useCallback(() => {
@@ -1010,7 +1157,7 @@ export default function App() {
         isTitleScreen={match.status === 'title'}
       />
 
-      {/* [SCR-01] Universal Landing Page & Public Marketing Terminal */}
+      {/* [SCR-01] Universal Landing Page & Public Marketing Terminal (Root '/') */}
       {match.status === 'title' && showPublicPortal && (
         <Scr01LandingPortal
           session={session}
@@ -1023,21 +1170,20 @@ export default function App() {
             })
           }
           onEnterArena={(selectedSport) => {
-            if (selectedSport) setSport(selectedSport);
-            setShowPublicPortal(false);
+            navigateToRoute('lobby', { sport: selectedSport });
           }}
           onOpenCustomLobby={() => {
             setMode('custom');
             setRoomCodeInput('RACE-101');
-            setShowPublicPortal(false);
+            navigateToRoute('lobby', { roomCode: 'RACE-101' });
           }}
-          onOpenCurriculum={() => setIsCurriculumOpen(true)}
+          onOpenCurriculum={() => navigateToRoute('curriculum')}
           wsConnected={wsConnected}
           activeRoomsCount={activeRoomsCount}
         />
       )}
 
-      {/* 3D Tournament Lobby & Custom Multi-Competitor Room Configurator */}
+      {/* 3D Tournament Lobby & Custom Multi-Competitor Room Configurator ('/lobby') */}
       {match.status === 'title' &&
         !showPublicPortal &&
         !isGeneratorOpen &&
@@ -1075,11 +1221,13 @@ export default function App() {
             setProGateNotice={setProGateNotice}
             onStartMatch={handleStartMatch}
             onGenerateNewCode={() => {
-              setRoomCodeInput(generateRoomCode(undefined, sport));
+              const nextCode = generateRoomCode(undefined, sport);
+              setRoomCodeInput(nextCode);
               setRoomCodeError(null);
+              navigateToRoute('lobby', { roomCode: nextCode, replace: true });
             }}
-            onOpenCurriculum={() => setIsCurriculumOpen(true)}
-            onOpenPublicPortal={() => setShowPublicPortal(true)}
+            onOpenCurriculum={() => navigateToRoute('curriculum')}
+            onOpenPublicPortal={() => navigateToRoute('landing')}
             onOpenLoginForPro={() =>
               setAuthModalState({
                 isOpen: true,
@@ -1093,14 +1241,8 @@ export default function App() {
             activeRoomsCount={activeRoomsCount}
             liveRoomPeers={liveRoomPeers}
             activeRooms={activeRooms}
-            onOpenQuestionGenerator={() => {
-              setIsExtractorOpen(false);
-              setIsGeneratorOpen(true);
-            }}
-            onOpenSourceExtractor={() => {
-              setIsGeneratorOpen(false);
-              setIsExtractorOpen(true);
-            }}
+            onOpenQuestionGenerator={() => navigateToRoute('generator')}
+            onOpenSourceExtractor={() => navigateToRoute('extractor')}
             onOpenQuickMatchQueue={handleOpenQuickMatchQueue}
             onOpenWaitingRoom={handleOpenWaitingRoom}
             activeCustomBankTitle={selectedRaceBank ? selectedRaceBank.title : null}
@@ -1108,7 +1250,7 @@ export default function App() {
           />
         )}
 
-      {/* Quick Match Matchmaking Lobby (1v1 Queue State) */}
+      {/* Quick Match Matchmaking Lobby (1v1 Queue State) ('/matchmaking') */}
       <QuickMatchQueueModal
         isOpen={isQueueModalOpen}
         queueState={queueState}
@@ -1122,7 +1264,7 @@ export default function App() {
         onCancelQueue={handleCancelQueue}
       />
 
-      {/* Multiplayer Waiting Room System */}
+      {/* Multiplayer Waiting Room System ('/waiting-room') */}
       <WaitingRoomModal
         isOpen={isWaitingRoomOpen}
         roomCode={roomCodeInput}
@@ -1139,10 +1281,10 @@ export default function App() {
         onToggleReady={handleToggleWaitingRoomReady}
         onSimulatePlayerJoin={handleSimulatePlayerJoin}
         onLaunchMatch={handleStartMatch}
-        onLeaveWaitingRoom={() => setIsWaitingRoomOpen(false)}
+        onLeaveWaitingRoom={() => navigateToRoute('lobby', { roomCode: roomCodeInput })}
       />
 
-      {/* [SCR-09] Custom Question Generator Dashboard (Screen 9 of 11) */}
+      {/* [SCR-09] Custom Question Generator Dashboard ('/generator') */}
       <Scr09QuestionGeneratorDashboard
         isOpen={isGeneratorOpen}
         session={session}
@@ -1151,12 +1293,9 @@ export default function App() {
         onSelectBank={(id) => setActiveBankId(id)}
         onSaveBank={handleSaveCustomBank}
         onDeleteBank={handleDeleteCustomBank}
-        onCloseToLobby={() => setIsGeneratorOpen(false)}
+        onCloseToLobby={() => navigateToRoute('lobby')}
         onLaunchRaceWithBank={handleLaunchRaceWithCustomBank}
-        onOpenSourceExtractor={() => {
-          setIsGeneratorOpen(false);
-          setIsExtractorOpen(true);
-        }}
+        onOpenSourceExtractor={() => navigateToRoute('extractor')}
         onOpenAuthModal={() =>
           setAuthModalState({
             isOpen: true,
@@ -1176,7 +1315,7 @@ export default function App() {
         }
       />
 
-      {/* [SCR-10] AI Source Extraction Console (Screen 10 of 11) */}
+      {/* [SCR-10] AI Source Extraction Console ('/extractor') */}
       {isExtractorOpen && (
         <Scr10AiSourceExtractionConsole
           session={session}
@@ -1188,10 +1327,9 @@ export default function App() {
           onOpenInQuestionGenerator={(bank) => {
             handleSaveCustomBank(bank);
             setActiveBankId(bank.id);
-            setIsExtractorOpen(false);
-            setIsGeneratorOpen(true);
+            navigateToRoute('generator');
           }}
-          onBackToLobby={() => setIsExtractorOpen(false)}
+          onBackToLobby={() => navigateToRoute('lobby')}
           onOpenAuthForPro={() =>
             setAuthModalState({
               isOpen: true,
@@ -1212,7 +1350,7 @@ export default function App() {
         />
       )}
 
-      {/* Active Gameplay HUD & Split-Screen Academic Quiz Deck */}
+      {/* Active Gameplay HUD & Split-Screen Academic Quiz Deck ('/play') */}
       {(match.status === 'playing' || match.status === 'paused' || match.status === 'gameover') && (
         <PlayingHudAndQuizDeck
           match={match}
@@ -1249,13 +1387,16 @@ export default function App() {
         match={match}
         onResume={() => setMatch((prev) => ({ ...prev, status: 'playing' }))}
         onRestart={handleStartMatch}
-        onReturnToTitle={() => setMatch((prev) => ({ ...prev, status: 'title' }))}
+        onReturnToTitle={() => {
+          navigateToRoute('lobby', { roomCode: match.roomCode });
+          setMatch((prev) => ({ ...prev, status: 'title' }));
+        }}
         onQuitGame={handleQuitGameByHost}
         isHost={isLocalHost}
         onLaunchReplayArena={handleLaunchReplayArena}
       />
 
-      {/* Local In-Memory Replay Arena View Screen (Full-Bleed 3D Reconstruction + RAM Cache Scrubber) */}
+      {/* Local In-Memory Replay Arena View Screen ('/replay') */}
       <LocalReplayArenaModal
         match={match}
         currentStepIndex={replayStepIndex}
@@ -1276,14 +1417,21 @@ export default function App() {
           setProGateNotice(null);
           setMode('custom');
           setCompetitorCount(8);
-          setShowPublicPortal(false);
+          if (activeRoute === 'landing') {
+            navigateToRoute('lobby');
+          }
         }}
       />
 
-      {/* Educator, Student & Investor Curriculum Brief Modal */}
+      {/* Educator, Student & Investor Curriculum Brief Modal ('/curriculum') */}
       <CurriculumDrawerModal
         isOpen={isCurriculumOpen}
-        onClose={() => setIsCurriculumOpen(false)}
+        onClose={() => {
+          setIsCurriculumOpen(false);
+          if (activeRoute === 'curriculum') {
+            navigateToRoute(showPublicPortal ? 'landing' : 'lobby');
+          }
+        }}
       />
     </main>
   );

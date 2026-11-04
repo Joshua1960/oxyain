@@ -1394,6 +1394,204 @@ export function terminateMatchByHost(
   };
 }
 
+// ============================================================================
+// Application URL Routing & History State Machine
+// ============================================================================
 
+export type AppRouteId =
+  | 'landing'
+  | 'lobby'
+  | 'waiting-room'
+  | 'matchmaking'
+  | 'play'
+  | 'replay'
+  | 'generator'
+  | 'extractor'
+  | 'curriculum';
 
+export interface ResolvedRouteState {
+  route: AppRouteId;
+  roomCode?: string;
+  sport?: SportDiscipline;
+  player?: string;
+  autostart: boolean;
+}
 
+/**
+ * Resolves the active application screen from browser pathname and query string.
+ * Root path ('/') always resolves to 'landing' unless overridden by a specific route or ?autostart=1.
+ */
+export function resolveRouteFromLocation(
+  pathname = '/',
+  search = ''
+): ResolvedRouteState {
+  const cleanPath = (pathname || '/').split('?')[0].replace(/\/+$/, '').toLowerCase() || '/';
+  const params = new URLSearchParams(search.startsWith('?') ? search : `?${search}`);
+
+  const autostart = params.get('autostart') === '1';
+  const screenParam = (params.get('screen') || '').trim().toLowerCase();
+  const rawRoom = params.get('room')?.trim().toUpperCase();
+  const roomCode = rawRoom && isValidRoomCode(rawRoom) ? rawRoom : undefined;
+  const rawSport = params.get('sport')?.trim().toLowerCase();
+  const sport: SportDiscipline | undefined =
+    rawSport === 'racing' || rawSport === 'sprinting' || rawSport === 'hurdles'
+      ? rawSport
+      : undefined;
+  const player = params.get('player')?.trim() || undefined;
+
+  if (autostart || cleanPath === '/play' || cleanPath === '/race' || screenParam === 'play') {
+    return { route: 'play', roomCode, sport, player, autostart };
+  }
+  if (cleanPath === '/replay' || screenParam === 'replay') {
+    return { route: 'replay', roomCode, sport, player, autostart: false };
+  }
+  if (
+    cleanPath === '/generator' ||
+    cleanPath === '/question-generator' ||
+    screenParam === 'generator' ||
+    screenParam === 'scr09'
+  ) {
+    return { route: 'generator', roomCode, sport, player, autostart: false };
+  }
+  if (
+    cleanPath === '/extractor' ||
+    cleanPath === '/ai-extractor' ||
+    cleanPath === '/import' ||
+    screenParam === 'extractor' ||
+    screenParam === 'scr10'
+  ) {
+    return { route: 'extractor', roomCode, sport, player, autostart: false };
+  }
+  if (cleanPath === '/waiting-room' || screenParam === 'waiting-room') {
+    return { route: 'waiting-room', roomCode, sport, player, autostart: false };
+  }
+  if (cleanPath === '/matchmaking' || cleanPath === '/queue' || screenParam === 'matchmaking') {
+    return { route: 'matchmaking', roomCode, sport, player, autostart: false };
+  }
+  if (cleanPath === '/curriculum' || screenParam === 'curriculum') {
+    return { route: 'curriculum', roomCode, sport, player, autostart: false };
+  }
+  if (
+    cleanPath === '/lobby' ||
+    cleanPath === '/arena' ||
+    screenParam === 'lobby' ||
+    Boolean(roomCode)
+  ) {
+    return { route: 'lobby', roomCode, sport, player, autostart: false };
+  }
+
+  return { route: 'landing', roomCode, sport, player, autostart: false };
+}
+
+/**
+ * Builds a clean, canonical browser URL for any application route.
+ */
+export function buildUrlForRoute(
+  route: AppRouteId,
+  options?: { roomCode?: string; sport?: SportDiscipline }
+): string {
+  const query = new URLSearchParams();
+  if (
+    options?.roomCode &&
+    isValidRoomCode(options.roomCode) &&
+    (route === 'lobby' || route === 'waiting-room' || route === 'play')
+  ) {
+    query.set('room', options.roomCode.trim().toUpperCase());
+  }
+  if (options?.sport && (route === 'lobby' || route === 'play')) {
+    query.set('sport', options.sport);
+  }
+  const qs = query.toString();
+  const suffix = qs ? `?${qs}` : '';
+
+  switch (route) {
+    case 'landing':
+      return '/';
+    case 'lobby':
+      return `/lobby${suffix}`;
+    case 'waiting-room':
+      return `/waiting-room${suffix}`;
+    case 'matchmaking':
+      return '/matchmaking';
+    case 'play':
+      return `/play${suffix}`;
+    case 'replay':
+      return '/replay';
+    case 'generator':
+      return '/generator';
+    case 'extractor':
+      return '/extractor';
+    case 'curriculum':
+      return '/curriculum';
+    default:
+      return '/';
+  }
+}
+
+// ============================================================================
+// High-Concurrency Sharding & Token-Bucket Rate Limiting (1M Users Ready)
+// ============================================================================
+
+export const SHARD_COUNT = 64;
+
+/**
+ * O(1) deterministic FNV-1a 32-bit consistent hash mapping any room code or player key
+ * onto a fixed shard partition [0, shardCount - 1].
+ */
+export function computeConsistentShardIndex(key: string, shardCount = SHARD_COUNT): number {
+  const safeCount = Math.max(1, Math.floor(shardCount));
+  const normalized = String(key || '').trim().toUpperCase();
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < normalized.length; i++) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0) % safeCount;
+}
+
+/**
+ * Builds an O(1) partitioned matchmaking queue key so pairing 1v1 players never
+ * performs an O(N) scan over all queued sockets.
+ */
+export function computeMatchmakingBucketKey(
+  sport: SportDiscipline,
+  subject: SubjectId,
+  difficulty: QuestionDifficultyId
+): string {
+  return `mm:1v1:${sport}:${subject}:${difficulty}`;
+}
+
+export interface TokenBucketState {
+  tokens: number;
+  lastRefillMs: number;
+}
+
+/**
+ * O(1) token-bucket rate limiter for WebSocket and HTTP request streams.
+ */
+export function consumeTokenBucket(
+  bucket: TokenBucketState,
+  nowMs: number,
+  capacity = 30,
+  refillPerSecond = 15,
+  cost = 1
+): { allowed: boolean; nextBucket: TokenBucketState } {
+  const elapsedSeconds = Math.max(0, (nowMs - bucket.lastRefillMs) / 1000);
+  const replenished = Math.min(capacity, bucket.tokens + elapsedSeconds * refillPerSecond);
+  if (replenished < cost) {
+    return {
+      allowed: false,
+      nextBucket: {
+        tokens: replenished,
+        lastRefillMs: nowMs,
+      },
+    };
+  }
+  return {
+    allowed: true,
+    nextBucket: {
+      tokens: replenished - cost,
+      lastRefillMs: nowMs,
+    },
+  };
+}

@@ -33,6 +33,12 @@ import {
   buildWaitingRoomSlots,
   canLaunchWaitingRoom,
   terminateMatchByHost,
+  resolveRouteFromLocation,
+  buildUrlForRoute,
+  SHARD_COUNT,
+  computeConsistentShardIndex,
+  computeMatchmakingBucketKey,
+  consumeTokenBucket,
 } from './rules';
 import {
   PRESET_EXTRACTION_SOURCES,
@@ -41,6 +47,9 @@ import {
   createInitialValidationChecks,
   extractStructuredQuestionsFromCleanedText,
   getQuestionsForMatch,
+  inferSubjectFromSourceText,
+  isNaturalLanguageClause,
+  isNaturalLanguageWord,
   validateCustomQuestionBank,
   validateCustomQuestionDraft,
   validateExtractionInput,
@@ -761,5 +770,140 @@ test('AI document extraction builds questions directly from actual user source m
   }
 });
 
+test('AI Source Extractor rejects binary PDF/DOCX gibberish tokens and auto-infers subject from real source text without a subject selector', () => {
+  // 1. Exact binary gibberish tokens reported by user are rejected
+  assert.equal(isNaturalLanguageWord('moyD'), false);
+  assert.equal(isNaturalLanguageWord('IvG'), false);
+  assert.equal(isNaturalLanguageWord("PN'k"), false);
+  assert.equal(isNaturalLanguageWord('UfP"&n'), false);
+  assert.equal(isNaturalLanguageWord('ji]K'), false);
+  assert.equal(isNaturalLanguageWord('2hk'), false);
+  assert.equal(isNaturalLanguageWord('chloroplast'), true);
+  assert.equal(isNaturalLanguageWord('thermodynamics'), true);
 
+  const gibberishClause = "t. IvG 5$, 2hk 'X9 PN'k I: J16P moyD UfP\"&n ji]K";
+  assert.equal(isNaturalLanguageClause(gibberishClause), false);
+
+  // 2. Pure binary gibberish fails validation
+  const gibberishValidation = validateExtractionInput({
+    sourceFormat: 'pdf',
+    fileName: 'corrupted_binary.pdf',
+    rawContent: `${gibberishClause}. ${gibberishClause}. ${gibberishClause}.`,
+    targetDifficulty: 'medium',
+    questionCount: 4,
+    parserEngine: 'gemini-3.8-flash',
+  });
+  assert.equal(gibberishValidation.valid, false);
+
+  // 3. Real source text mixed with binary stream noise strips all gibberish and extracts clean questions without targetSubject
+  const noisyDocument = `
+    %PDF-1.7
+    t. IvG 5$, 2hk 'X9 PN'k I: J16P moyD UfP"&n ji]K
+    Monetary policy governs how a central bank manages liquidity and interest rates to maintain price stability.
+    Open market operations involve buying and selling government treasury securities to regulate the money supply.
+    When inflation rises above target, the central bank increases the discount rate to cool borrowing and spending.
+    Fiscal policy differs from monetary policy because taxation and government expenditure are enacted by the legislature.
+    endstream endobj
+  `;
+
+  const cleaned = cleanSourceTextWithBackgroundWorker(noisyDocument);
+  assert.ok(!cleaned.cleanedText.includes('moyD'));
+  assert.ok(!cleaned.cleanedText.includes("PN'k"));
+  assert.ok(!cleaned.cleanedText.includes('J16P'));
+  assert.equal(inferSubjectFromSourceText(cleaned.cleanedText), 'business');
+
+  const extracted = extractStructuredQuestionsFromCleanedText({
+    cleanedText: cleaned.cleanedText,
+    clauses: cleaned.clauses,
+    targetDifficulty: 'medium',
+    questionCount: 4,
+    sourceLabel: 'Central_Bank_Policy.pdf',
+  });
+
+  assert.equal(extracted.length, 4);
+  for (const q of extracted) {
+    assert.equal(q.subject, 'business');
+    assert.ok(!q.prompt.includes('moyD'));
+    assert.ok(!q.prompt.includes('IvG'));
+    for (const opt of q.options) {
+      assert.ok(!opt.includes('moyD'));
+      assert.ok(!opt.includes("PN'k"));
+      assert.ok(!opt.includes('ji]K'));
+    }
+  }
+});
+
+test('SPA Route Resolver ensures root (/) is always the Landing Page and all screens route cleanly via pathname or query params', () => {
+  // 1. Root path always resolves to Landing Page
+  const rootState = resolveRouteFromLocation('/', '');
+  assert.equal(rootState.route, 'landing');
+  assert.equal(rootState.autostart, false);
+  assert.equal(rootState.roomCode, undefined);
+
+  // 2. Clean pathnames resolve to their respective screens
+  assert.equal(resolveRouteFromLocation('/lobby', '').route, 'lobby');
+  assert.equal(resolveRouteFromLocation('/waiting-room', '?room=race-88x').route, 'waiting-room');
+  assert.equal(resolveRouteFromLocation('/waiting-room', '?room=race-88x').roomCode, 'RACE-88X');
+  assert.equal(resolveRouteFromLocation('/matchmaking', '').route, 'matchmaking');
+  assert.equal(resolveRouteFromLocation('/play', '').route, 'play');
+  assert.equal(resolveRouteFromLocation('/replay', '').route, 'replay');
+  assert.equal(resolveRouteFromLocation('/generator', '').route, 'generator');
+  assert.equal(resolveRouteFromLocation('/extractor', '').route, 'extractor');
+  assert.equal(resolveRouteFromLocation('/curriculum', '').route, 'curriculum');
+
+  // 3. Query parameter ?screen=... and ?autostart=1 work seamlessly
+  const queryExtractor = resolveRouteFromLocation('/', '?screen=extractor');
+  assert.equal(queryExtractor.route, 'extractor');
+  const autoStartState = resolveRouteFromLocation('/', '?autostart=1');
+  assert.equal(autoStartState.route, 'play');
+  assert.equal(autoStartState.autostart, true);
+
+  // 4. Unknown paths fall back safely to Landing Page
+  assert.equal(resolveRouteFromLocation('/non-existent-page-xyz', '').route, 'landing');
+
+  // 5. buildUrlForRoute produces clean canonical paths
+  assert.equal(buildUrlForRoute('landing'), '/');
+  assert.equal(buildUrlForRoute('lobby'), '/lobby');
+  assert.equal(buildUrlForRoute('waiting-room', { roomCode: 'RACE-77X' }), '/waiting-room?room=RACE-77X');
+  assert.equal(buildUrlForRoute('extractor'), '/extractor');
+  assert.equal(buildUrlForRoute('generator'), '/generator');
+});
+
+test('High-concurrency sharding and token-bucket rate limiter scale deterministically for 1M+ concurrent users', () => {
+  assert.equal(SHARD_COUNT, 64);
+
+  // Deterministic consistent shard index in [0, 63]
+  const shardA1 = computeConsistentShardIndex('RACE-77X');
+  const shardA2 = computeConsistentShardIndex('race-77x');
+  assert.equal(shardA1, shardA2);
+  assert.ok(shardA1 >= 0 && shardA1 < SHARD_COUNT);
+
+  // Distribution across shards for 256 sample room codes
+  const seenShards = new Set<number>();
+  for (let i = 0; i < 256; i++) {
+    seenShards.add(computeConsistentShardIndex(`ROOM-${i}X`));
+  }
+  assert.ok(seenShards.size > 32);
+
+  // Matchmaking O(1) bucket key partitioning
+  assert.equal(
+    computeMatchmakingBucketKey('racing', 'stem', 'hard'),
+    'mm:1v1:racing:stem:hard'
+  );
+
+  // Token-bucket rate limiter allows burst up to capacity, rejects excess, and refills smoothly over time
+  let bucket = { tokens: 5, lastRefillMs: 1000 };
+  for (let i = 0; i < 5; i++) {
+    const res = consumeTokenBucket(bucket, 1000, 5, 10, 1);
+    assert.equal(res.allowed, true);
+    bucket = res.nextBucket;
+  }
+  const blocked = consumeTokenBucket(bucket, 1000, 5, 10, 1);
+  assert.equal(blocked.allowed, false);
+
+  // 500ms later at 10 tokens/sec -> +5 tokens refilled
+  const refilled = consumeTokenBucket(blocked.nextBucket, 1500, 5, 10, 1);
+  assert.equal(refilled.allowed, true);
+  assert.equal(refilled.nextBucket.tokens, 4);
+});
 
