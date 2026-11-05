@@ -1104,6 +1104,31 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
           }
 
           let room = rooms.get(targetCode);
+          if (data.type === 'room:join' && !room) {
+            safeWsSend(
+              ws,
+              JSON.stringify({ type: 'room:error', message: 'This room does not exist. Ask the host for a valid room code.' })
+            );
+            return;
+          }
+          if (room && room.status !== 'lobby' && !room.players.has(playerId)) {
+            safeWsSend(
+              ws,
+              JSON.stringify({ type: 'room:error', message: 'This match has already started.' })
+            );
+            return;
+          }
+          if (
+            room &&
+            !room.players.has(playerId) &&
+            room.players.size >= room.competitorCount
+          ) {
+            safeWsSend(
+              ws,
+              JSON.stringify({ type: 'room:error', message: 'This room is full.' })
+            );
+            return;
+          }
           const isCreatingRoom = !room;
           if (!room) {
             room = {
@@ -1120,7 +1145,7 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
               velocityPreset,
               hostId: playerId,
               hostName: playerName,
-              status: data.type === 'room:join' ? 'playing' : 'lobby',
+              status: 'lobby',
               createdAt: Date.now(),
               players: new Map(),
             };
@@ -1171,40 +1196,10 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
           if (!player) return;
           player.ready = typeof data.ready === 'boolean' ? data.ready : !player.ready;
           broadcastToRoom(room, serializeRoomState(room));
-        } else if (data.type === 'room:simulate_join' && currentRoomCode) {
-          const room = rooms.get(currentRoomCode);
-          if (!room) return;
-          if (room.players.size >= room.competitorCount) return;
-          const challengerNames = [
-            'Marcus Sterling',
-            'Aria Chen',
-            'Liam O-Connor',
-            'Sofia Rostova',
-            'Devon Brooks',
-            'Kaito Tanaka',
-            'Zara Al-Mansoor',
-          ];
-          const idx = room.players.size;
-          const simId = `contender-${Date.now()}-${idx}`;
-          const customName = sanitizePlainText(data.playerName, 40);
-          const simName = customName || challengerNames[(idx - 1) % challengerNames.length];
-          const laneChoices: (-1 | 0 | 1)[] = [1, 0, -1];
-          room.players.set(simId, {
-            id: simId,
-            name: simName,
-            isHost: false,
-            ready: true,
-            speedKmh: 100,
-            distanceMeters: 0,
-            streak: 0,
-            correctCount: 0,
-            answeredCount: 0,
-            laneIndex: laneChoices[idx % laneChoices.length],
-            finished: false,
-            ws: null,
-          });
-          broadcastToRoom(room, serializeRoomState(room));
-          broadcastDirectoryUpdate();
+        } else if (data.type === 'room:leave') {
+          removePlayerFromRoom(currentRoomCode, currentPlayerId);
+          currentRoomCode = null;
+          currentPlayerId = null;
         } else if (data.type === 'queue:join') {
           const playerId: string =
             sanitizePlainText(data.playerId, 40) ||
@@ -1451,6 +1446,43 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
         } else if (data.type === 'room:launch' && currentRoomCode && currentPlayerId) {
           const room = rooms.get(currentRoomCode);
           if (!room) return;
+          const requester = room.players.get(currentPlayerId);
+          if (
+            (typeof data.roomCode === 'string' &&
+              data.roomCode.trim().toUpperCase() !== room.roomCode) ||
+            room.hostId !== currentPlayerId ||
+            !requester?.isHost
+          ) {
+            safeWsSend(
+              ws,
+              JSON.stringify({ type: 'room:error', message: "Only this room's host can start the match." })
+            );
+            return;
+          }
+          if (room.status !== 'lobby') {
+            safeWsSend(
+              ws,
+              JSON.stringify({ type: 'room:error', message: 'This match has already started.' })
+            );
+            return;
+          }
+          const connectedPlayers = Array.from(room.players.values()).filter(
+            (player) => player.ws?.readyState === WebSocket.OPEN
+          );
+          if (connectedPlayers.length < 2) {
+            safeWsSend(
+              ws,
+              JSON.stringify({ type: 'room:error', message: 'At least two connected players are required to start.' })
+            );
+            return;
+          }
+          if (connectedPlayers.some((player) => !player.ready)) {
+            safeWsSend(
+              ws,
+              JSON.stringify({ type: 'room:error', message: 'All connected players must be ready before starting.' })
+            );
+            return;
+          }
 
           if (data.sport) room.sport = data.sport;
           if (data.subject) room.subject = data.subject;

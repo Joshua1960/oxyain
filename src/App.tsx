@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActiveRoomSummary,
   AppRouteId,
@@ -49,7 +49,6 @@ import {
   SubjectId,
 } from './game/questions';
 import { soundFX } from './game/sound';
-import { ThreeRaceViewport } from './components/ThreeRaceViewport';
 import { TitleScreenModal } from './components/TitleScreenModal';
 import { PlayingHudAndQuizDeck } from './components/PlayingHudAndQuizDeck';
 import { StatusModalCard } from './components/StatusModalCard';
@@ -62,6 +61,12 @@ import { AuthModal } from './components/AuthModal';
 import { QuickMatchQueueModal } from './components/QuickMatchQueueModal';
 import { WaitingRoomModal } from './components/WaitingRoomModal';
 
+const ThreeRaceViewport = lazy(() =>
+  import('./components/ThreeRaceViewport').then((module) => ({
+    default: module.ThreeRaceViewport,
+  }))
+);
+
 export default function App() {
   const initialResolved =
     typeof window !== 'undefined'
@@ -69,6 +74,8 @@ export default function App() {
       : { route: 'landing' as AppRouteId, autostart: false };
 
   const [activeRoute, setActiveRoute] = useState<AppRouteId>(initialResolved.route);
+  const activeRouteRef = useRef<AppRouteId>(initialResolved.route);
+  activeRouteRef.current = activeRoute;
   const [showPublicPortal, setShowPublicPortal] = useState<boolean>(
     initialResolved.route === 'landing'
   );
@@ -124,6 +131,7 @@ export default function App() {
   );
   const [muted, setMuted] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
+  const [roomError, setRoomError] = useState<string | null>(null);
   const [activeRoomsCount, setActiveRoomsCount] = useState(0);
   const [activeRooms, setActiveRooms] = useState<ActiveRoomSummary[]>([]);
   const [liveRoomPeers, setLiveRoomPeers] = useState<LiveRoomPeer[]>([]);
@@ -249,6 +257,19 @@ export default function App() {
         skipHistoryPush?: boolean;
       }
     ) => {
+      if (
+        activeRouteRef.current === 'waiting-room' &&
+        targetRoute !== 'waiting-room' &&
+        targetRoute !== 'play'
+      ) {
+        const ws = wsRef.current;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'room:leave' }));
+        }
+        setLiveRoomPeers([]);
+        setHasLiveRemotePeer(false);
+      }
+      activeRouteRef.current = targetRoute;
       setActiveRoute(targetRoute);
       document.body.dataset.route = targetRoute;
       if (typeof document !== 'undefined') {
@@ -434,6 +455,9 @@ export default function App() {
             const selfEntry = msg.players.find(
               (p: LiveRoomPeer) => p.id === clientPlayerIdRef.current
             );
+            if (selfEntry && typeof selfEntry.ready === 'boolean') {
+              setLocalIsReady(selfEntry.ready);
+            }
             if (selfEntry && typeof selfEntry.isHost === 'boolean') {
               setIsLocalHost(selfEntry.isHost);
             } else if (typeof msg.hostId === 'string') {
@@ -441,6 +465,7 @@ export default function App() {
             }
             setLiveRoomPeers(remotePeers);
             setHasLiveRemotePeer(remotePeers.length > 0);
+            setRoomError(null);
 
             if (remotePeers.length > 0) {
               setMatch((prev) => syncRemotePeersIntoMatch(prev, remotePeers));
@@ -490,6 +515,8 @@ export default function App() {
             navigateToRoute('lobby', { roomCode: msg.roomCode || roomCodeInput });
             document.body.dataset.state = 'title';
             setMatch((prev) => terminateMatchByHost(prev, true));
+          } else if (msg.type === 'room:error') {
+            setRoomError(typeof msg.message === 'string' ? msg.message : 'Unable to join or start this room.');
           } else if (msg.type === 'queue:status') {
             setQueueState((prev) => ({
               ...prev,
@@ -673,6 +700,7 @@ export default function App() {
   useEffect(() => {
     const ws = wsRef.current;
     if (!wsConnected || !ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!isWaitingRoomOpen) return;
     if (match.status !== 'title') return;
     if (mode === 'custom' && !isValidRoomCode(roomCodeInput)) return;
 
@@ -699,6 +727,7 @@ export default function App() {
     );
   }, [
     wsConnected,
+    isWaitingRoomOpen,
     match.status,
     mode,
     roomCodeInput,
@@ -715,7 +744,7 @@ export default function App() {
 
   const broadcastPlayerUpdate = useCallback((nextMatch: MatchState) => {
     const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN && nextMatch.status === 'playing') {
       ws.send(
         JSON.stringify({
           type: 'player:update',
@@ -730,6 +759,22 @@ export default function App() {
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (match.status !== 'playing' || !hasLiveRemotePeer) return;
+    broadcastPlayerUpdate(match);
+  }, [
+    match.status,
+    match.player.speedKmh,
+    match.player.distanceMeters,
+    match.player.streak,
+    match.player.correctCount,
+    match.player.answeredCount,
+    match.player.laneIndex,
+    match.player.finished,
+    hasLiveRemotePeer,
+    broadcastPlayerUpdate,
+  ]);
 
   const handleStartMatch = useCallback(() => {
     if (mode === 'custom' && !isValidRoomCode(roomCodeInput)) {
@@ -768,6 +813,34 @@ export default function App() {
 
     const playerName = session ? session.fullName : defaultGuestCallsignRef.current;
     const effectiveCompetitors: CompetitorCount = mode === 'custom' ? competitorCount : 2;
+
+    if (isWaitingRoomOpen) {
+      const ws = wsRef.current;
+      if (!isLocalHost) {
+        setRoomError('Only the host can start this match.');
+        return;
+      }
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        setRoomError('The room connection is unavailable. Reconnect before starting.');
+        return;
+      }
+      setRoomError(null);
+      ws.send(
+        JSON.stringify({
+          type: 'room:launch',
+          roomCode: roomCodeInput.trim().toUpperCase(),
+          sport,
+          subject,
+          questionDifficulty,
+          questionCount,
+          matchLength: inferredLength,
+          competitorCount: effectiveCompetitors,
+          rivalDifficulty,
+          velocityPreset,
+        })
+      );
+      return;
+    }
 
     // Pull unseen AI-generated questions matching current subject & difficulty when no custom bank is forced
     let initialCustomQuestions: QuestionItem[] | undefined = selectedRaceBank
@@ -815,39 +888,6 @@ export default function App() {
     setReplayStepIndex(0);
     setMatch(nextMatch);
 
-    const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: 'room:join',
-          playerId: clientPlayerIdRef.current,
-          playerName,
-          sport,
-          subject,
-          questionDifficulty,
-          questionCount,
-          matchLength: inferredLength,
-          mode,
-          competitorCount: effectiveCompetitors,
-          rivalDifficulty,
-          velocityPreset,
-          roomCode: activeCode,
-        })
-      );
-      ws.send(
-        JSON.stringify({
-          type: 'room:launch',
-          sport,
-          subject,
-          questionDifficulty,
-          questionCount,
-          matchLength: inferredLength,
-          competitorCount: effectiveCompetitors,
-          rivalDifficulty,
-          velocityPreset,
-        })
-      );
-    }
   }, [
     mode,
     roomCodeInput,
@@ -861,6 +901,8 @@ export default function App() {
     session,
     liveRoomPeers,
     selectedRaceBank,
+    isWaitingRoomOpen,
+    isLocalHost,
     navigateToRoute,
   ]);
 
@@ -1105,6 +1147,9 @@ export default function App() {
       return;
     }
     setProGateNotice(null);
+    setRoomError(null);
+    setLiveRoomPeers([]);
+    setHasLiveRemotePeer(false);
     setMode('custom');
     setLocalIsReady(true);
     navigateToRoute('waiting-room', { roomCode: roomCodeInput.trim().toUpperCase() });
@@ -1117,6 +1162,10 @@ export default function App() {
     velocityPreset,
     navigateToRoute,
   ]);
+
+  const handleLeaveWaitingRoom = useCallback(() => {
+    navigateToRoute('lobby', { roomCode: roomCodeInput });
+  }, [navigateToRoute, roomCodeInput]);
 
   const handleToggleWaitingRoomReady = useCallback(() => {
     setLocalIsReady((prev) => {
@@ -1133,43 +1182,6 @@ export default function App() {
       return next;
     });
   }, []);
-
-  const handleSimulatePlayerJoin = useCallback(
-    (customPlayerName?: string) => {
-      const ws = wsRef.current;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: 'room:simulate_join',
-            playerName: customPlayerName,
-          })
-        );
-      } else {
-        setLiveRoomPeers((prev) => {
-          if (prev.length + 1 >= competitorCount) return prev;
-          const names = ['Marcus Sterling', 'Aria Chen', 'Liam O-Connor', 'Sofia Rostova'];
-          const nextIdx = prev.length;
-          return [
-            ...prev,
-            {
-              id: `sim-${Date.now()}-${nextIdx}`,
-              name: customPlayerName || names[nextIdx % names.length],
-              isHost: false,
-              ready: true,
-              speedKmh: 100,
-              distanceMeters: 0,
-              streak: 0,
-              correctCount: 0,
-              answeredCount: 0,
-              laneIndex: 1,
-              finished: false,
-            },
-          ];
-        });
-      }
-    },
-    [competitorCount]
-  );
 
   // Simulation step interval (10Hz state reconciliation for HUD numbers while Three.js interpolates smoothly at 60Hz)
   useEffect(() => {
@@ -1317,12 +1329,14 @@ export default function App() {
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#070B14] select-none">
       {/* Persistent Three.js 3D Viewport mounted once in an isolated container */}
-      <ThreeRaceViewport
-        matchRef={matchRef}
-        previewSport={sport}
-        previewCompetitorCount={mode === 'custom' ? competitorCount : 2}
-        isTitleScreen={match.status === 'title'}
-      />
+      <Suspense fallback={<div className="absolute inset-0 bg-[#070B14]" />}>
+        <ThreeRaceViewport
+          matchRef={matchRef}
+          previewSport={sport}
+          previewCompetitorCount={mode === 'custom' ? competitorCount : 2}
+          isTitleScreen={match.status === 'title'}
+        />
+      </Suspense>
 
       {/* [SCR-01] Universal Landing Page & Public Marketing Terminal (Root '/') */}
       {match.status === 'title' && showPublicPortal && (
@@ -1448,13 +1462,14 @@ export default function App() {
         competitorCount={competitorCount}
         session={session}
         localPlayerId={clientPlayerIdRef.current}
+        localIsHost={isLocalHost}
         localIsReady={localIsReady}
         remotePeers={liveRoomPeers}
         wsConnected={wsConnected}
+        roomError={roomError}
         onToggleReady={handleToggleWaitingRoomReady}
-        onSimulatePlayerJoin={handleSimulatePlayerJoin}
         onLaunchMatch={handleStartMatch}
-        onLeaveWaitingRoom={() => navigateToRoute('lobby', { roomCode: roomCodeInput })}
+        onLeaveWaitingRoom={handleLeaveWaitingRoom}
         guestDisplayName={guestDisplayName}
         onChangeGuestDisplayName={handleUpdateGuestDisplayName}
       />

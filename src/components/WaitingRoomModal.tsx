@@ -5,7 +5,6 @@ import {
   Copy,
   Flag,
   ShieldCheck,
-  UserPlus,
   Users,
   Wifi,
   X,
@@ -37,11 +36,12 @@ interface WaitingRoomModalProps {
   competitorCount: CompetitorCount;
   session: AuthenticatedSession | null;
   localPlayerId: string;
+  localIsHost: boolean;
   localIsReady: boolean;
   remotePeers: LiveRoomPeer[];
   wsConnected: boolean;
+  roomError: string | null;
   onToggleReady: () => void;
-  onSimulatePlayerJoin: (customPlayerName?: string) => void;
   onLaunchMatch: () => void;
   onLeaveWaitingRoom: () => void;
   guestDisplayName?: string;
@@ -58,18 +58,18 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
   competitorCount,
   session,
   localPlayerId,
+  localIsHost,
   localIsReady,
   remotePeers,
   wsConnected,
+  roomError,
   onToggleReady,
-  onSimulatePlayerJoin,
   onLaunchMatch,
   onLeaveWaitingRoom,
   guestDisplayName = 'Contender',
   onChangeGuestDisplayName,
 }) => {
   const [copiedCode, setCopiedCode] = useState(false);
-  const [joinNameInput, setJoinNameInput] = useState('');
 
   if (!isOpen) return null;
 
@@ -80,7 +80,7 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
     localPlayerId,
     localPlayerName,
     localIsReady,
-    localIsHost: true,
+    localIsHost,
     competitorCount,
     remotePeers,
   });
@@ -93,12 +93,6 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
     }
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 1800);
-  };
-
-  const handleAddPlayer = () => {
-    const trimmed = joinNameInput.trim();
-    onSimulatePlayerJoin(trimmed || undefined);
-    setJoinNameInput('');
   };
 
   return (
@@ -123,7 +117,7 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/90 border border-slate-700 text-slate-200 text-xs font-mono"
             >
               <Wifi className={`w-3 h-3 ${wsConnected ? 'text-emerald-400' : 'text-amber-400'}`} />
-              {launchStatus.humanCount} / {competitorCount} Joined
+              {launchStatus.humanCount} Joined
             </span>
           </div>
 
@@ -164,7 +158,7 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
           >
             <span>
               {launchStatus.allowed
-                ? `Players joined (${launchStatus.humanCount}/${competitorCount}). Room is ready to start!`
+                ? `${launchStatus.humanCount} players are ready. The host can start the match.`
                 : launchStatus.waitingReason}
             </span>
             <span className="font-mono text-[11px] text-slate-300">
@@ -195,39 +189,14 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
             </div>
           )}
 
-          {/* Join Player Controls */}
-          {launchStatus.humanCount < competitorCount && (
-            <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-              <div className="text-xs text-slate-300">
-                Players can join with code{' '}
-                <span className="font-mono font-bold text-cyan-300">{roomCode}</span> or join below:
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  data-testid="waiting-room-player-name-input"
-                  value={joinNameInput}
-                  onChange={(e) => setJoinNameInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddPlayer();
-                    }
-                  }}
-                  placeholder="Player name..."
-                  maxLength={28}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
-                />
-                <button
-                  type="button"
-                  data-testid="waiting-room-simulate-join-btn"
-                  onClick={handleAddPlayer}
-                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-semibold border border-cyan-400/50 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>Join Player</span>
-                </button>
-              </div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-4 py-3 text-xs text-slate-300">
+            Share room code <span className="font-mono font-bold text-cyan-300">{roomCode}</span>.
+            Guests can enter the code from the lobby and join this waiting room.
+          </div>
+
+          {roomError && (
+            <div role="alert" className="rounded-lg border border-rose-500/40 bg-rose-950/50 px-4 py-3 text-xs text-rose-200">
+              {roomError}
             </div>
           )}
 
@@ -323,23 +292,27 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
             <button
               type="button"
               data-testid="waiting-room-start-btn"
-              disabled={!launchStatus.allowed}
+              disabled={!localIsHost || !launchStatus.allowed || !wsConnected}
               onClick={() => {
-                if (launchStatus.allowed) {
+                if (localIsHost && launchStatus.allowed && wsConnected) {
                   onLaunchMatch();
                 }
               }}
               className={`px-5 py-2.5 rounded-lg font-display font-bold text-xs tracking-wide flex items-center gap-2 transition-all ${
-                launchStatus.allowed
+                localIsHost && launchStatus.allowed && wsConnected
                   ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 cursor-pointer'
                   : 'bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed opacity-75'
               }`}
             >
               <Flag className="w-4 h-4" />
               <span>
-                {launchStatus.allowed
+                {!wsConnected
+                  ? 'Connecting to room…'
+                  : !localIsHost
+                  ? 'Waiting for Host'
+                  : launchStatus.allowed
                   ? `Start Match (${launchStatus.humanCount} Joined)`
-                  : `Waiting for Players (${launchStatus.humanCount}/${competitorCount})`}
+                  : `Waiting for Players (${launchStatus.humanCount}/${launchStatus.minRequiredPlayers})`}
               </span>
             </button>
           </div>
@@ -348,4 +321,3 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
     </div>
   );
 };
-
