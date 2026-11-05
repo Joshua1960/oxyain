@@ -31,7 +31,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [institutionCode, setInstitutionCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,7 +51,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       email,
       password,
       fullName,
-      institutionCode,
       role,
       selectedTier,
     });
@@ -66,8 +64,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const resolvedName =
       mode === 'signup'
         ? fullName.trim()
-        : mode === 'sso'
-        ? `${email.split('@')[0]} (${institutionCode.trim().toUpperCase()})`
         : email.split('@')[0];
 
     onAuthenticated({
@@ -101,8 +97,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <h2 id="auth-modal-heading" className="text-xl font-bold text-white font-display">
               {mode === 'signup'
                 ? 'Create Your Oxyain Account'
-                : mode === 'sso'
-                ? 'Campus & Organization SSO'
                 : 'Sign In to Oxyain'}
             </h2>
           </div>
@@ -119,7 +113,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Mode Segmented Control */}
         <div className="px-6 pt-5">
           <div
-            className="grid grid-cols-3 gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800"
+            className="grid grid-cols-2 gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800"
             role="group"
             aria-label="Authentication Mode"
           >
@@ -150,20 +144,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               }`}
             >
               Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('sso');
-                setError(null);
-              }}
-              className={`py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap cursor-pointer ${
-                mode === 'sso'
-                  ? 'bg-cyan-500 text-slate-950'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              Campus SSO
             </button>
           </div>
         </div>
@@ -210,35 +190,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             />
           </div>
 
-          {mode === 'sso' ? (
-            <div>
-              <label htmlFor="auth-sso-code" className="block text-xs font-medium text-slate-300 mb-1">
-                Campus SSO Code
-              </label>
-              <input
-                id="auth-sso-code"
-                type="text"
-                value={institutionCode}
-                onChange={(e) => setInstitutionCode(e.target.value)}
-                placeholder="CAMPUS-SSO"
-                className="w-full px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm font-mono text-white focus:outline-none focus:border-cyan-400"
-              />
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="auth-password" className="block text-xs font-medium text-slate-300 mb-1">
-                Password
-              </label>
-              <input
-                id="auth-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400"
-              />
-            </div>
-          )}
+          <div>
+            <label htmlFor="auth-password" className="block text-xs font-medium text-slate-300 mb-1">
+              Password
+            </label>
+            <input
+              id="auth-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400"
+            />
+          </div>
 
           {error && (
             <p role="alert" data-testid="auth-error-msg" className="text-xs text-rose-400 font-medium">
@@ -261,8 +225,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             >
               {mode === 'signup'
                 ? 'Create Account & Enter'
-                : mode === 'sso'
-                ? 'Verify SSO & Enter'
                 : 'Sign In & Enter'}
             </button>
           </div>

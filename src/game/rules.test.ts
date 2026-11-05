@@ -35,6 +35,9 @@ import {
   terminateMatchByHost,
   resolveRouteFromLocation,
   buildUrlForRoute,
+  normalizeGuestDisplayName,
+  getRouteDocumentTitle,
+  completeMatchAndReturnToLobby,
   SHARD_COUNT,
   computeConsistentShardIndex,
   computeMatchmakingBucketKey,
@@ -383,11 +386,11 @@ test('[SCR-09] Custom Question Generator Dashboard enforces Pro route guard, val
 
   // 2. Route guard allows authenticated Pro users
   const proGuard = evaluateQuestionGeneratorAccess({
+    id: 'usr-elena-1',
     email: 'elena.vance@academy.edu',
     fullName: 'Dr. Elena Vance',
     role: 'educator',
     tier: 'classroom',
-    billingCycle: 'annual',
   });
   assert.equal(proGuard.allowed, true);
 
@@ -906,4 +909,97 @@ test('High-concurrency sharding and token-bucket rate limiter scale deterministi
   assert.equal(refilled.allowed, true);
   assert.equal(refilled.nextBucket.tokens, 4);
 });
+
+test('Anonymous display name editing and post-match return-to-lobby transition preserve player telemetry and route to /lobby', () => {
+  // 1. Anonymous display name normalization
+  assert.equal(normalizeGuestDisplayName('  Nova Racer 99  ', 'Contender-101'), 'Nova Racer 99');
+  assert.equal(normalizeGuestDisplayName('<b>SpeedKing</b>', 'Contender-101'), 'SpeedKing');
+  assert.equal(normalizeGuestDisplayName('   ', 'Contender-101'), 'Contender-101');
+  assert.equal(
+    normalizeGuestDisplayName('A'.repeat(45), 'Contender-101').length,
+    28
+  );
+
+  // 2. Route document titles
+  assert.ok(getRouteDocumentTitle('landing').includes('Oxyain'));
+  assert.equal(getRouteDocumentTitle('lobby'), 'Tournament Lobby — Oxyain');
+  assert.equal(getRouteDocumentTitle('play'), 'Live 3D Match — Oxyain');
+  assert.equal(getRouteDocumentTitle('replay'), '3D Match Replay — Oxyain');
+
+  // 3. Finishing a match transitions route to 'lobby' and match status to 'title' while preserving completed snapshot
+  let match = createMatchState({
+    sport: 'racing',
+    subject: 'stem',
+    questionDifficulty: 'easy',
+    questionCount: 3,
+    matchLength: 'sprint',
+    mode: 'custom',
+    roomCode: 'RACE-505',
+    playerName: 'Nova Racer 99',
+  });
+  assert.equal(match.player.name, 'Nova Racer 99');
+
+  for (let i = 0; i < 3; i++) {
+    const q = match.questions[match.currentQuestionIndex];
+    match = submitMatchAnswer(match, q.correctIndex);
+  }
+  assert.equal(match.status, 'gameover');
+
+  const postMatch = completeMatchAndReturnToLobby(match);
+  assert.equal(postMatch.targetRoute, 'lobby');
+  assert.equal(postMatch.lobbyMatchState.status, 'title');
+  assert.equal(postMatch.completedMatchSnapshot.status, 'gameover');
+  assert.equal(postMatch.completedMatchSnapshot.player.name, 'Nova Racer 99');
+  assert.equal(postMatch.completedMatchSnapshot.player.correctCount, 3);
+  assert.ok(postMatch.completedMatchSnapshot.replayEvents.length >= 4);
+});
+
+test('Question generator never repeats questions within a 100-question match or across consecutive matches', () => {
+  // 1. Within a 100-question match in a single subject + difficulty, all 100 prompts are 100% distinct
+  const hundredStemEasy = getQuestionsForMatch('stem', 100, 777, 'easy');
+  assert.equal(hundredStemEasy.length, 100);
+  const promptSet100 = new Set(hundredStemEasy.map((q) => q.prompt.toLowerCase()));
+  assert.equal(promptSet100.size, 100);
+
+  // 2. Across 3 consecutive matches in the same room code ('RACE-101'), no question prompt is repeated
+  const match1 = createMatchState({
+    sport: 'racing',
+    subject: 'stem',
+    questionDifficulty: 'easy',
+    questionCount: 10,
+    matchLength: 'circuit',
+    mode: 'custom',
+    roomCode: 'RACE-101',
+  });
+  const match2 = createMatchState({
+    sport: 'racing',
+    subject: 'stem',
+    questionDifficulty: 'easy',
+    questionCount: 10,
+    matchLength: 'circuit',
+    mode: 'custom',
+    roomCode: 'RACE-101',
+  });
+  const match3 = createMatchState({
+    sport: 'racing',
+    subject: 'stem',
+    questionDifficulty: 'easy',
+    questionCount: 10,
+    matchLength: 'circuit',
+    mode: 'custom',
+    roomCode: 'RACE-101',
+  });
+
+  const combinedPrompts = [
+    ...match1.questions.map((q) => q.prompt.toLowerCase()),
+    ...match2.questions.map((q) => q.prompt.toLowerCase()),
+    ...match3.questions.map((q) => q.prompt.toLowerCase()),
+  ];
+  assert.equal(combinedPrompts.length, 30);
+  assert.equal(new Set(combinedPrompts).size, 30);
+});
+
+
+
+
 

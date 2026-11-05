@@ -5,6 +5,7 @@ import {
   MatchmakingQueueState,
   SPORT_CONFIGS,
   SportDiscipline,
+  normalizeGuestDisplayName,
 } from '../game/rules';
 import { DIFFICULTY_METADATA, QuestionDifficultyId, SUBJECT_METADATA, SubjectId } from '../game/questions';
 
@@ -12,6 +13,7 @@ interface QuickMatchQueueModalProps {
   isOpen: boolean;
   queueState: MatchmakingQueueState;
   session: AuthenticatedSession | null;
+  guestDisplayName?: string;
   sport: SportDiscipline;
   subject: SubjectId;
   questionDifficulty: QuestionDifficultyId;
@@ -25,6 +27,7 @@ export const QuickMatchQueueModal: React.FC<QuickMatchQueueModalProps> = ({
   isOpen,
   queueState,
   session,
+  guestDisplayName = 'Contender',
   sport,
   subject,
   questionDifficulty,
@@ -35,14 +38,16 @@ export const QuickMatchQueueModal: React.FC<QuickMatchQueueModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const playerName = session ? session.fullName : 'You (Contender)';
+  const playerName = session
+    ? session.fullName
+    : normalizeGuestDisplayName(guestDisplayName, 'Contender');
   const playerInitials = playerName
     .split(/\s+/)
     .map((part) => part.replace(/[^A-Za-z0-9]/g, '')[0])
     .filter(Boolean)
     .slice(0, 2)
     .join('')
-    .toUpperCase() || 'YC';
+    .toUpperCase() || 'CT';
 
   const sportLabel = SPORT_CONFIGS[sport].shortLabel;
   const subjectLabel = SUBJECT_METADATA[subject].shortLabel;
@@ -98,7 +103,7 @@ export const QuickMatchQueueModal: React.FC<QuickMatchQueueModalProps> = ({
               <span className="text-slate-600">•</span>
               <span className="text-amber-300 font-mono">{diffLabel}</span>
               <span className="text-slate-600">•</span>
-              <span className="text-emerald-300 font-mono font-bold">{questionCount}Q</span>
+              <span className="text-emerald-300 font-mono font-bold">{questionCount} Questions</span>
             </div>
             <div
               data-testid="matchmaking-timer"

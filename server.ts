@@ -31,11 +31,13 @@ import {
   INITIAL_CUSTOM_QUESTION_BANKS,
   QuestionDifficultyId,
   QuestionItem,
+  SUBJECT_METADATA,
   SourceExtractionInput,
   SubjectId,
   buildQuestionItemFromDraft,
   cleanSourceTextWithBackgroundWorker,
   extractStructuredQuestionsFromCleanedText,
+  getQuestionsForMatch,
   inferSubjectFromSourceText,
   validateCustomQuestionBank,
   validateCustomQuestionDraft,
@@ -526,6 +528,186 @@ async function startServer() {
     evictStaleRooms();
     res.setHeader('Cache-Control', 'public, max-age=1');
     res.json(serializeRoomDirectory());
+  });
+
+  // Dynamic AI Random Question Generator Endpoint (Gemini 3.8 Flash + Non-Repeating Fallback)
+  app.post('/api/ai-questions', async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || 'local';
+    if (!checkRateLimit(clientIp, 60, 60_000)) {
+      res.status(429).json({ error: 'Rate limit exceeded. Please wait a moment.' });
+      return;
+    }
+
+    const body = (req.body || {}) as {
+      subject?: SubjectId;
+      difficulty?: QuestionDifficultyId;
+      count?: number;
+      excludePrompts?: string[];
+    };
+
+    const subject: SubjectId =
+      body.subject === 'stem' ||
+      body.subject === 'literature' ||
+      body.subject === 'social' ||
+      body.subject === 'business' ||
+      body.subject === 'general'
+        ? body.subject
+        : 'all';
+    const difficulty: QuestionDifficultyId =
+      body.difficulty === 'easy' || body.difficulty === 'medium' || body.difficulty === 'hard'
+        ? body.difficulty
+        : 'all';
+    const count = Math.max(1, Math.min(100, Math.round(Number(body.count) || 10)));
+    const excludeList = Array.isArray(body.excludePrompts)
+      ? body.excludePrompts.slice(0, 300).map((p) => sanitizePlainText(p, 240))
+      : [];
+    const excludedSet = new Set(excludeList.map((p) => p.toLowerCase()));
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    const aiQuestions: QuestionItem[] = [];
+    let usedLiveGemini = false;
+
+    if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.trim().length > 10) {
+      try {
+        const ai = new GoogleGenAI({
+          apiKey,
+          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
+        });
+
+        const aiBatchCount = Math.min(25, count);
+        const subjectDesc =
+          subject === 'all'
+            ? 'a balanced mix of STEM & Mathematics, Languages & Literature, Social Sciences, Business & Finance, and General Knowledge'
+            : SUBJECT_METADATA[subject].label;
+        const diffDesc =
+          difficulty === 'all'
+            ? 'a progressive mix of Easy, Medium, and Hard'
+            : difficulty;
+
+        const avoidSnippet =
+          excludeList.length > 0
+            ? `\nDo NOT repeat or closely paraphrase any of these previously asked questions:\n- ${excludeList
+                .slice(-25)
+                .join('\n- ')}`
+            : '';
+
+        const promptText = `Generate ${aiBatchCount} brand-new, diverse, random multiple-choice academic quiz questions for ${subjectDesc} at ${diffDesc} difficulty (Random seed: ${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 7)}).
+Rules:
+- Every question must be unique, factually accurate, and engaging.
+- Do not repeat questions.${avoidSnippet}
+- Provide subject ('stem' | 'literature' | 'social' | 'business' | 'general'), difficultyTier ('easy' | 'medium' | 'hard'), topic, prompt, 4 distinct options, correctIndex (0..3), and a concise explanation.`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: promptText,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  subject: { type: Type.STRING },
+                  difficultyTier: { type: Type.STRING },
+                  topic: { type: Type.STRING },
+                  prompt: { type: Type.STRING },
+                  options: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                  },
+                  correctIndex: { type: Type.INTEGER },
+                  explanation: { type: Type.STRING },
+                },
+                required: [
+                  'subject',
+                  'difficultyTier',
+                  'topic',
+                  'prompt',
+                  'options',
+                  'correctIndex',
+                  'explanation',
+                ],
+              },
+            },
+          },
+        });
+
+        const parsed = JSON.parse((response.text ?? '[]').trim());
+        if (Array.isArray(parsed)) {
+          for (let i = 0; i < parsed.length; i++) {
+            const item = parsed[i];
+            if (!item || !Array.isArray(item.options) || item.options.length < 4) continue;
+            const itemSubj: Exclude<SubjectId, 'all'> =
+              subject !== 'all'
+                ? subject
+                : item.subject === 'literature' ||
+                  item.subject === 'social' ||
+                  item.subject === 'business' ||
+                  item.subject === 'general'
+                ? item.subject
+                : 'stem';
+            const itemTier: 'easy' | 'medium' | 'hard' =
+              difficulty !== 'all'
+                ? difficulty
+                : item.difficultyTier === 'easy' || item.difficultyTier === 'hard'
+                ? item.difficultyTier
+                : 'medium';
+
+            const draft: CustomQuestionDraft = {
+              subject: itemSubj,
+              topic: sanitizePlainText(item.topic || 'Academic Challenge', 60),
+              difficultyTier: itemTier,
+              prompt: sanitizePlainText(item.prompt || '', 300),
+              options: [
+                sanitizePlainText(item.options[0], 140),
+                sanitizePlainText(item.options[1], 140),
+                sanitizePlainText(item.options[2], 140),
+                sanitizePlainText(item.options[3], 140),
+              ],
+              correctIndex:
+                item.correctIndex === 0 ||
+                item.correctIndex === 1 ||
+                item.correctIndex === 2 ||
+                item.correctIndex === 3
+                  ? item.correctIndex
+                  : 0,
+              explanation: sanitizePlainText(item.explanation || '', 320),
+            };
+            const check = validateCustomQuestionDraft(draft);
+            const promptKey = draft.prompt.toLowerCase();
+            if (check.valid && !excludedSet.has(promptKey)) {
+              excludedSet.add(promptKey);
+              aiQuestions.push(
+                buildQuestionItemFromDraft(draft, `ai-gen-${Date.now()}-${i + 1}`)
+              );
+            }
+          }
+          if (aiQuestions.length > 0) {
+            usedLiveGemini = true;
+          }
+        }
+      } catch {
+        // Fallback to non-repeating procedural + curated question synthesizer
+      }
+    }
+
+    const randomSeed = ((Date.now() & 0xfffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0;
+    const questions = getQuestionsForMatch(
+      subject,
+      count,
+      randomSeed,
+      difficulty,
+      aiQuestions.length > 0 ? aiQuestions : undefined,
+      excludedSet
+    );
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({
+      questions,
+      usedLiveGemini,
+    });
   });
 
   // [SCR-09] Custom Question Generator Dashboard REST API
@@ -1302,8 +1484,8 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
 
           // Broadcast authoritative match start to EVERY connected player in this room
           broadcastToRoom(room, {
-            type: 'room:match_started',
             ...serializeRoomState(room),
+            type: 'room:match_started',
           });
           broadcastDirectoryUpdate();
         } else if (data.type === 'room:terminate' && currentRoomCode && currentPlayerId) {

@@ -21,13 +21,16 @@ import {
   StakeholderRole,
   VelocityPreset,
   buildUrlForRoute,
+  completeMatchAndReturnToLobby,
   createInitialQueueState,
   createMatchState,
   evaluateLobbyAccess,
   flushReplayMemory,
   generateRoomCode,
+  getRouteDocumentTitle,
   inferMatchLengthFromCount,
   isValidRoomCode,
+  normalizeGuestDisplayName,
   pairQueueOpponent,
   reconstructMatchAtReplayStep,
   recordLaneAdjustmentEvent,
@@ -42,6 +45,7 @@ import {
   CustomQuestionBank,
   INITIAL_CUSTOM_QUESTION_BANKS,
   QuestionDifficultyId,
+  QuestionItem,
   SubjectId,
 } from './game/questions';
 import { soundFX } from './game/sound';
@@ -138,9 +142,50 @@ export default function App() {
   const [isLocalHost, setIsLocalHost] = useState<boolean>(true);
 
   const clientPlayerIdRef = useRef<string>(`p-${Math.random().toString(36).slice(2, 9)}`);
+  const fallbackCallsign = `Contender-${clientPlayerIdRef.current.slice(-3).toUpperCase()}`;
+  const [guestDisplayName, setGuestDisplayName] = useState<string>(() => {
+    if (initialResolved.player) {
+      return normalizeGuestDisplayName(initialResolved.player, fallbackCallsign);
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = window.localStorage.getItem('oxyain_guest_display_name');
+        if (saved && saved.trim().length > 0) {
+          return normalizeGuestDisplayName(saved, fallbackCallsign);
+        }
+      } catch {
+        // Ignore storage errors
+      }
+    }
+    return fallbackCallsign;
+  });
+
   const defaultGuestCallsignRef = useRef<string>(
-    initialResolved.player || `Contender-${clientPlayerIdRef.current.slice(-3).toUpperCase()}`
+    normalizeGuestDisplayName(guestDisplayName, fallbackCallsign)
   );
+  defaultGuestCallsignRef.current = normalizeGuestDisplayName(
+    guestDisplayName,
+    fallbackCallsign
+  );
+
+  const handleUpdateGuestDisplayName = useCallback(
+    (nextRaw: string) => {
+      const cleaned = nextRaw.replace(/<[^>]*>/g, '').slice(0, 28);
+      setGuestDisplayName(cleaned);
+      const normalized = normalizeGuestDisplayName(cleaned, fallbackCallsign);
+      defaultGuestCallsignRef.current = normalized;
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem('oxyain_guest_display_name', normalized);
+        } catch {
+          // Ignore storage errors
+        }
+      }
+    },
+    [fallbackCallsign]
+  );
+
+  const [lastCompletedMatch, setLastCompletedMatch] = useState<MatchState | null>(null);
 
   const [match, setMatch] = useState<MatchState>(() => {
     const initial = createMatchState({
@@ -151,6 +196,7 @@ export default function App() {
       matchLength: 'sprint',
       mode: 'custom',
       roomCode: initialResolved.roomCode || 'RACE-101',
+      playerName: defaultGuestCallsignRef.current,
       competitorCount: 4,
     });
     return {
@@ -175,6 +221,8 @@ export default function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const sessionRef = useRef<AuthenticatedSession | null>(session);
   sessionRef.current = session;
+  const seenPromptsRef = useRef<Set<string>>(new Set());
+  const aiQuestionPoolRef = useRef<QuestionItem[]>([]);
   const lobbyConfigRef = useRef({
     sport,
     subject,
@@ -203,6 +251,9 @@ export default function App() {
     ) => {
       setActiveRoute(targetRoute);
       document.body.dataset.route = targetRoute;
+      if (typeof document !== 'undefined') {
+        document.title = getRouteDocumentTitle(targetRoute);
+      }
 
       if (options?.sport) {
         setSport(options.sport);
@@ -307,11 +358,28 @@ export default function App() {
     []
   );
 
-  // Sync document.body.dataset.state & listen for browser Back/Forward navigation
+  // Sync document.body.dataset.state, document.title & normalize initial URL if non-canonical
   useEffect(() => {
     document.body.dataset.state = match.status;
     document.body.dataset.route = activeRoute;
+    document.title = getRouteDocumentTitle(activeRoute);
   }, [match.status, activeRoute]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const resolved = resolveRouteFromLocation(window.location.pathname, window.location.search);
+    if (resolved.route === 'replay' && (!match.replayEvents || match.replayEvents.length === 0)) {
+      navigateToRoute('lobby', { replace: true });
+      return;
+    }
+    const canonical = buildUrlForRoute(resolved.route, {
+      roomCode: resolved.roomCode,
+      sport: resolved.sport,
+    });
+    if (window.location.pathname !== canonical.split('?')[0]) {
+      window.history.replaceState({ route: resolved.route }, '', canonical);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const onPopState = () => {
@@ -568,6 +636,39 @@ export default function App() {
     }).catch(() => {});
   }, []);
 
+  // Pre-fetch fresh AI-generated random questions whenever lobby subject/difficulty/count changes or returning to lobby
+  useEffect(() => {
+    if (match.status !== 'title') return;
+    let cancelled = false;
+    fetch('/api/ai-questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject,
+        difficulty: questionDifficulty,
+        count: Math.min(25, Math.max(questionCount, 10)),
+        excludePrompts: Array.from(seenPromptsRef.current).slice(-150),
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data || !Array.isArray(data.questions)) return;
+        const fresh: QuestionItem[] = data.questions.filter(
+          (q: QuestionItem) =>
+            q &&
+            typeof q.prompt === 'string' &&
+            !seenPromptsRef.current.has(q.prompt.trim().toLowerCase())
+        );
+        if (fresh.length > 0) {
+          aiQuestionPoolRef.current = [...fresh, ...aiQuestionPoolRef.current].slice(0, 120);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [subject, questionDifficulty, questionCount, match.status]);
+
   // Automatically sync lobby presence over WebSocket whenever in the Lobby or changing room parameters
   useEffect(() => {
     const ws = wsRef.current;
@@ -609,6 +710,7 @@ export default function App() {
     rivalDifficulty,
     velocityPreset,
     session,
+    guestDisplayName,
   ]);
 
   const broadcastPlayerUpdate = useCallback((nextMatch: MatchState) => {
@@ -667,6 +769,23 @@ export default function App() {
     const playerName = session ? session.fullName : defaultGuestCallsignRef.current;
     const effectiveCompetitors: CompetitorCount = mode === 'custom' ? competitorCount : 2;
 
+    // Pull unseen AI-generated questions matching current subject & difficulty when no custom bank is forced
+    let initialCustomQuestions: QuestionItem[] | undefined = selectedRaceBank
+      ? selectedRaceBank.questions
+      : undefined;
+
+    if (!selectedRaceBank && aiQuestionPoolRef.current.length > 0) {
+      const matchingAi = aiQuestionPoolRef.current.filter(
+        (q) =>
+          !seenPromptsRef.current.has(q.prompt.trim().toLowerCase()) &&
+          (subject === 'all' || q.subject === subject) &&
+          (questionDifficulty === 'all' || q.difficultyTier === questionDifficulty)
+      );
+      if (matchingAi.length > 0) {
+        initialCustomQuestions = matchingAi.slice(0, questionCount);
+      }
+    }
+
     const nextMatch = createMatchState({
       sport,
       subject,
@@ -680,8 +799,16 @@ export default function App() {
       rivalDifficulty,
       velocityPreset,
       remotePeers: liveRoomPeers,
-      customQuestions: selectedRaceBank ? selectedRaceBank.questions : undefined,
+      customQuestions: initialCustomQuestions,
+      excludePrompts: seenPromptsRef.current,
     });
+
+    for (const q of nextMatch.questions) {
+      seenPromptsRef.current.add(q.prompt.trim().toLowerCase());
+    }
+    aiQuestionPoolRef.current = aiQuestionPoolRef.current.filter(
+      (q) => !seenPromptsRef.current.has(q.prompt.trim().toLowerCase())
+    );
 
     navigateToRoute('play', { roomCode: activeCode, sport });
     document.body.dataset.state = 'playing';
@@ -798,14 +925,26 @@ export default function App() {
         } else {
           soundFX.playWrongStumble();
         }
-        if (next.status === 'gameover' && next.winner === 'player') {
-          soundFX.playVictoryFanfare();
-        }
         broadcastPlayerUpdate(next);
+
+        if (next.status === 'gameover') {
+          if (next.winner === 'player') {
+            soundFX.playVictoryFanfare();
+          }
+          const completed = completeMatchAndReturnToLobby(next);
+          setLastCompletedMatch(completed.completedMatchSnapshot);
+          window.setTimeout(() => {
+            navigateToRoute(completed.targetRoute, {
+              roomCode: next.roomCode,
+              sport: next.sport,
+            });
+          }, 0);
+          return completed.lobbyMatchState;
+        }
         return next;
       });
     },
-    [broadcastPlayerUpdate]
+    [broadcastPlayerUpdate, navigateToRoute]
   );
 
   const handleShiftLane = useCallback(
@@ -827,16 +966,28 @@ export default function App() {
   const handleLaunchReplayArena = useCallback(() => {
     setReplayStepIndex(0);
     navigateToRoute('replay');
-    setMatch((prev) => ({
-      ...prev,
-      status: 'replay',
-    }));
-  }, [navigateToRoute]);
+    setMatch((prev) => {
+      const sourceMatch =
+        lastCompletedMatch &&
+        Array.isArray(lastCompletedMatch.replayEvents) &&
+        lastCompletedMatch.replayEvents.length > 0
+          ? lastCompletedMatch
+          : prev;
+      return {
+        ...sourceMatch,
+        status: 'replay',
+      };
+    });
+  }, [navigateToRoute, lastCompletedMatch]);
 
   const handleExitAndFlushReplay = useCallback(() => {
     setReplayStepIndex(0);
-    navigateToRoute('play', { roomCode: match.roomCode, sport: match.sport });
-    setMatch((prev) => flushReplayMemory(prev));
+    navigateToRoute('lobby', { roomCode: match.roomCode, sport: match.sport });
+    setLastCompletedMatch((prev) => (prev ? flushReplayMemory(prev) : null));
+    setMatch((prev) => ({
+      ...flushReplayMemory(prev),
+      status: 'title',
+    }));
   }, [navigateToRoute, match.roomCode, match.sport]);
 
   const handleQuitGameByHost = useCallback(() => {
@@ -1033,21 +1184,37 @@ export default function App() {
       setMatch((prev) => {
         if (prev.status !== 'playing') return prev;
         const next = stepMatchSimulation(prev, dt, !hasLiveRemotePeer);
-        if (next.status === 'gameover' && prev.status === 'playing' && next.winner === 'player') {
-          soundFX.playVictoryFanfare();
+        if (next.status === 'gameover' && prev.status === 'playing') {
+          if (next.winner === 'player') {
+            soundFX.playVictoryFanfare();
+          }
+          const completed = completeMatchAndReturnToLobby(next);
+          setLastCompletedMatch(completed.completedMatchSnapshot);
+          window.setTimeout(() => {
+            navigateToRoute(completed.targetRoute, {
+              roomCode: next.roomCode,
+              sport: next.sport,
+            });
+          }, 0);
+          return completed.lobbyMatchState;
         }
         return next;
       });
     }, 100);
 
     return () => window.clearInterval(interval);
-  }, [match.status, hasLiveRemotePeer]);
+  }, [match.status, hasLiveRemotePeer, navigateToRoute]);
 
   // Unified Keyboard Input Listener
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isCurriculumOpen) {
-        if (e.key === 'Escape') setIsCurriculumOpen(false);
+        if (e.key === 'Escape') {
+          setIsCurriculumOpen(false);
+          if (activeRoute === 'curriculum') {
+            navigateToRoute(showPublicPortal ? 'landing' : 'lobby');
+          }
+        }
         return;
       }
       if (authModalState.isOpen) {
@@ -1247,6 +1414,11 @@ export default function App() {
             onOpenWaitingRoom={handleOpenWaitingRoom}
             activeCustomBankTitle={selectedRaceBank ? selectedRaceBank.title : null}
             onClearCustomBank={() => setSelectedRaceBank(null)}
+            guestDisplayName={guestDisplayName}
+            onChangeGuestDisplayName={handleUpdateGuestDisplayName}
+            lastCompletedMatch={lastCompletedMatch}
+            onDismissLastMatch={() => setLastCompletedMatch(null)}
+            onWatchLastMatchReplay={handleLaunchReplayArena}
           />
         )}
 
@@ -1255,6 +1427,7 @@ export default function App() {
         isOpen={isQueueModalOpen}
         queueState={queueState}
         session={session}
+        guestDisplayName={guestDisplayName}
         sport={sport}
         subject={subject}
         questionDifficulty={questionDifficulty}
@@ -1282,6 +1455,8 @@ export default function App() {
         onSimulatePlayerJoin={handleSimulatePlayerJoin}
         onLaunchMatch={handleStartMatch}
         onLeaveWaitingRoom={() => navigateToRoute('lobby', { roomCode: roomCodeInput })}
+        guestDisplayName={guestDisplayName}
+        onChangeGuestDisplayName={handleUpdateGuestDisplayName}
       />
 
       {/* [SCR-09] Custom Question Generator Dashboard ('/generator') */}

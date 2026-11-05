@@ -18,6 +18,7 @@ import {
   SportDiscipline,
   buildWaitingRoomSlots,
   canLaunchWaitingRoom,
+  normalizeGuestDisplayName,
 } from '../game/rules';
 import {
   DIFFICULTY_METADATA,
@@ -43,6 +44,8 @@ interface WaitingRoomModalProps {
   onSimulatePlayerJoin: (customPlayerName?: string) => void;
   onLaunchMatch: () => void;
   onLeaveWaitingRoom: () => void;
+  guestDisplayName?: string;
+  onChangeGuestDisplayName?: (nextName: string) => void;
 }
 
 export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
@@ -62,13 +65,17 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
   onSimulatePlayerJoin,
   onLaunchMatch,
   onLeaveWaitingRoom,
+  guestDisplayName = 'Contender',
+  onChangeGuestDisplayName,
 }) => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [joinNameInput, setJoinNameInput] = useState('');
 
   if (!isOpen) return null;
 
-  const localPlayerName = session ? session.fullName : 'You (Host)';
+  const localPlayerName = session
+    ? session.fullName
+    : normalizeGuestDisplayName(guestDisplayName, 'Contender');
   const slots = buildWaitingRoomSlots({
     localPlayerId,
     localPlayerName,
@@ -162,9 +169,31 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
             </span>
             <span className="font-mono text-[11px] text-slate-300">
               {SPORT_CONFIGS[sport].shortLabel} · {SUBJECT_METADATA[subject].shortLabel} ·{' '}
-              {DIFFICULTY_METADATA[questionDifficulty].shortLabel} · {questionCount}Q
+              {DIFFICULTY_METADATA[questionDifficulty].shortLabel} · {questionCount} Questions
             </span>
           </div>
+
+          {/* Anonymous Host Display Name Editor inside Waiting Room */}
+          {!session && onChangeGuestDisplayName && (
+            <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label
+                htmlFor="waiting-room-self-name-input"
+                className="text-xs font-medium text-slate-300"
+              >
+                Your Display Name
+              </label>
+              <input
+                id="waiting-room-self-name-input"
+                data-testid="waiting-room-self-name-input"
+                type="text"
+                maxLength={28}
+                value={guestDisplayName}
+                onChange={(e) => onChangeGuestDisplayName(e.target.value)}
+                placeholder="Enter your display name..."
+                className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400 sm:w-64"
+              />
+            </div>
+          )}
 
           {/* Join Player Controls */}
           {launchStatus.humanCount < competitorCount && (

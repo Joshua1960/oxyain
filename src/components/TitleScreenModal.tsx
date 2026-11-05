@@ -8,6 +8,7 @@ import {
   PRO_MAX_QUESTION_COUNT,
   LiveRoomPeer,
   MatchLengthId,
+  MatchState,
   MultiplayerMode,
   QUESTION_COUNT_PRESETS,
   RivalDifficulty,
@@ -16,6 +17,7 @@ import {
   VelocityPreset,
   inferMatchLengthFromCount,
   isValidRoomCode,
+  normalizeGuestDisplayName,
 } from '../game/rules';
 import {
   DIFFICULTY_METADATA,
@@ -65,6 +67,11 @@ interface TitleScreenModalProps {
   onOpenWaitingRoom?: () => void;
   activeCustomBankTitle?: string | null;
   onClearCustomBank?: () => void;
+  guestDisplayName: string;
+  onChangeGuestDisplayName: (nextName: string) => void;
+  lastCompletedMatch?: MatchState | null;
+  onDismissLastMatch?: () => void;
+  onWatchLastMatchReplay?: () => void;
 }
 
 
@@ -94,10 +101,14 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
   onOpenLoginForPro,
   session,
   liveRoomPeers = [],
-  onOpenQuestionGenerator,
   onOpenSourceExtractor,
   onOpenQuickMatchQueue,
   onOpenWaitingRoom,
+  guestDisplayName,
+  onChangeGuestDisplayName,
+  lastCompletedMatch,
+  onDismissLastMatch,
+  onWatchLastMatchReplay,
 }) => {
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -187,14 +198,22 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
               {session.fullName}
             </div>
           ) : (
-            <button
-              type="button"
-              data-testid="lobby-login-pro-btn"
-              onClick={onOpenLoginForPro}
-              className="px-3 py-1.5 rounded-lg bg-slate-900/95 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors cursor-pointer"
-            >
-              Sign In
-            </button>
+            <>
+              <div
+                data-testid="lobby-guest-display-name"
+                className="px-3 py-1.5 rounded-lg bg-slate-900/95 border border-cyan-500/40 text-cyan-300 text-xs font-mono"
+              >
+                {normalizeGuestDisplayName(guestDisplayName, 'Contender')}
+              </div>
+              <button
+                type="button"
+                data-testid="lobby-login-pro-btn"
+                onClick={onOpenLoginForPro}
+                className="px-3 py-1.5 rounded-lg bg-slate-900/95 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors cursor-pointer"
+              >
+                Sign In
+              </button>
+            </>
           )}
           {onOpenSourceExtractor && (
             <button
@@ -219,6 +238,88 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
       {/* Simple Centered Lobby Card */}
       <div className="w-full max-w-2xl mx-auto my-auto py-3 pointer-events-auto">
         <div className="bg-[#0B1120]/95 border border-slate-800 rounded-xl p-5 shadow-2xl space-y-4">
+          {/* Post-Match Result Summary Banner (shown when returning to Lobby after finishing a game) */}
+          {lastCompletedMatch && (
+            <div
+              data-testid="lobby-last-match-banner"
+              className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/45 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            >
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-mono font-bold uppercase">
+                    Match Complete
+                  </span>
+                  <span className="text-xs font-bold font-display text-white truncate">
+                    {lastCompletedMatch.winner === 'player'
+                      ? `1st Place / ${lastCompletedMatch.competitorCount} — Tournament Victory!`
+                      : `Position #${lastCompletedMatch.playerRank || 2} / ${lastCompletedMatch.competitorCount} — Podium Finish`}
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono text-slate-300">
+                  {lastCompletedMatch.player.name} · Peak {Math.round(lastCompletedMatch.player.peakSpeedKmh)} km/h ·{' '}
+                  {lastCompletedMatch.player.answeredCount > 0
+                    ? Math.round(
+                        (lastCompletedMatch.player.correctCount /
+                          lastCompletedMatch.player.answeredCount) *
+                          100
+                      )
+                    : 0}
+                  % Accuracy ({lastCompletedMatch.player.correctCount}/{lastCompletedMatch.player.answeredCount})
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {onWatchLastMatchReplay &&
+                  Array.isArray(lastCompletedMatch.replayEvents) &&
+                  lastCompletedMatch.replayEvents.length > 0 &&
+                  !lastCompletedMatch.replayMemoryFlushed && (
+                    <button
+                      type="button"
+                      data-testid="lobby-watch-replay-btn"
+                      onClick={onWatchLastMatchReplay}
+                      className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-display text-xs cursor-pointer"
+                    >
+                      Watch 3D Replay
+                    </button>
+                  )}
+                {onDismissLastMatch && (
+                  <button
+                    type="button"
+                    data-testid="lobby-dismiss-last-match-btn"
+                    onClick={onDismissLastMatch}
+                    aria-label="Dismiss match summary"
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Anonymous Player Display Name Input Row */}
+          {!session && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-slate-950/90 border border-slate-800">
+              <label
+                htmlFor="guest-display-name-input"
+                className="text-xs font-medium text-slate-300"
+              >
+                Display Name
+              </label>
+              <div className="flex items-center gap-2 flex-1 sm:max-w-xs">
+                <input
+                  id="guest-display-name-input"
+                  data-testid="guest-display-name-input"
+                  type="text"
+                  maxLength={28}
+                  value={guestDisplayName}
+                  onChange={(e) => onChangeGuestDisplayName(e.target.value)}
+                  placeholder="Enter display name..."
+                  className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-medium text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+            </div>
+          )}
+
           {/* 1. Mode Toggle */}
           <div className="grid grid-cols-2 gap-2" role="group" aria-label="Game Mode">
             <button
@@ -485,7 +586,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
                           : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
                       }`}
                     >
-                      {cnt}Q{locked ? '🔒' : ''}
+                      {cnt}{locked ? ' 🔒' : ''}
                     </button>
                   );
                 })}

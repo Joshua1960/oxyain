@@ -125,8 +125,8 @@ export const PlayingHudAndQuizDeck: React.FC<PlayingHudAndQuizDeckProps> = ({
         {/* Top-Center: Live Multi-Competitor Distance & Standings Progress */}
         <div className="hidden lg:flex flex-col flex-1 max-w-md bg-[#070B14]/90 border border-slate-800/90 rounded-xl px-4 py-2.5 pointer-events-auto">
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-semibold text-cyan-300 truncate">
-              You (#{currentRank}/{totalRacers}): {Math.round(match.player.distanceMeters)}m ({playerProgressPct}%)
+            <span data-testid="hud-player-name-progress" className="font-semibold text-cyan-300 truncate">
+              {match.player.name || 'You'} (#{currentRank}/{totalRacers}): {Math.round(match.player.distanceMeters)}m ({playerProgressPct}%)
             </span>
             <span className="font-semibold text-rose-300 truncate">
               {hasLiveRemotePeer ? 'Live Peer' : match.opponent.name}: {Math.round(match.opponent.distanceMeters)}m ({opponentProgressPct}%)

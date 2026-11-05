@@ -347,7 +347,7 @@ export const Scr01LandingPortal: React.FC<Scr01LandingPortalProps> = ({
         </a>
 
         {/* Primary Action */}
-        <div className="flex items-center shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           {session ? (
             <button
               type="button"
@@ -439,7 +439,7 @@ export const Scr01LandingPortal: React.FC<Scr01LandingPortalProps> = ({
             <div className="p-4 rounded-xl bg-[#0B1120] border border-slate-800/90">
               <div className="text-xs text-slate-400">Match Formats</div>
               <div className="text-xl font-bold font-mono text-cyan-400 tabular-nums mt-1">
-                5Q · 10Q · 20Q
+                5 · 10 · 20
               </div>
             </div>
 
@@ -489,7 +489,7 @@ export const Scr01LandingPortal: React.FC<Scr01LandingPortalProps> = ({
                 Flexible Match Lengths
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Choose <strong className="text-white">Sprint</strong> ({MATCH_LENGTHS.sprint.questionCount}Q), <strong className="text-white">Circuit</strong> ({MATCH_LENGTHS.circuit.questionCount}Q), or <strong className="text-white">Endurance</strong> ({MATCH_LENGTHS.endurance.questionCount}Q).
+                Choose <strong className="text-white">Sprint</strong> ({MATCH_LENGTHS.sprint.questionCount} Questions), <strong className="text-white">Circuit</strong> ({MATCH_LENGTHS.circuit.questionCount} Questions), or <strong className="text-white">Endurance</strong> ({MATCH_LENGTHS.endurance.questionCount} Questions).
               </p>
             </div>
 
@@ -638,13 +638,6 @@ export const Scr01LandingPortal: React.FC<Scr01LandingPortalProps> = ({
               className="hover:text-slate-200 transition-colors cursor-pointer"
             >
               Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenAuth('sso', 'district', 'educator')}
-              className="hover:text-slate-200 transition-colors cursor-pointer"
-            >
-              Campus SSO
             </button>
             <button
               type="button"

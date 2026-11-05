@@ -447,6 +447,13 @@ export function evaluateSourceExtractionAccess(session: AuthenticatedSession | n
   };
 }
 
+let matchEntropyNonce = 1;
+const globalServedQuestionPrompts = new Set<string>();
+
+export function resetServedQuestionsHistory(): void {
+  globalServedQuestionPrompts.clear();
+}
+
 export function createMatchState(params: {
   sport: SportDiscipline;
   subject: SubjectId;
@@ -462,6 +469,7 @@ export function createMatchState(params: {
   velocityPreset?: VelocityPreset;
   remotePeers?: LiveRoomPeer[];
   customQuestions?: QuestionItem[];
+  excludePrompts?: Iterable<string>;
   seed?: number;
 }): MatchState {
   const lengthConfig = MATCH_LENGTHS[params.matchLength];
@@ -481,17 +489,44 @@ export function createMatchState(params: {
       ? generateRoomCode(params.seed, params.sport)
       : generateRoomCode(params.seed);
 
+  const baseSeed =
+    typeof params.seed === 'number'
+      ? params.seed
+      : ((Date.now() & 0xfffffff) + (matchEntropyNonce++ * 2654435761)) >>> 0;
+
   const seedFromRoom = roomCode
     .split('')
-    .reduce((acc, ch, idx) => acc + ch.charCodeAt(0) * (idx + 17), params.seed ?? 101);
+    .reduce((acc, ch, idx) => acc + ch.charCodeAt(0) * (idx + 17), baseSeed);
+
+  const combinedExcluded = new Set<string>();
+  if (typeof params.seed !== 'number') {
+    for (const p of globalServedQuestionPrompts) {
+      combinedExcluded.add(p);
+    }
+  }
+  if (params.excludePrompts) {
+    for (const p of params.excludePrompts) {
+      combinedExcluded.add(p);
+    }
+  }
 
   const questions = getQuestionsForMatch(
     params.subject,
     resolvedQuestionCount,
     seedFromRoom,
     resolvedDifficulty,
-    params.customQuestions
+    params.customQuestions,
+    combinedExcluded
   );
+
+  if (typeof params.seed !== 'number') {
+    if (globalServedQuestionPrompts.size > 400) {
+      globalServedQuestionPrompts.clear();
+    }
+    for (const q of questions) {
+      globalServedQuestionPrompts.add(q.prompt.trim().toLowerCase());
+    }
+  }
 
   const totalCompetitors: CompetitorCount =
     params.competitorCount ?? (params.mode === 'custom' ? 4 : 2);
@@ -1014,7 +1049,7 @@ export function stepMatchSimulation(
 
 export type BillingCycle = 'monthly' | 'annual';
 export type PricingTierId = 'contender' | 'classroom' | 'district';
-export type AuthMode = 'signin' | 'signup' | 'sso';
+export type AuthMode = 'signin' | 'signup';
 export type StakeholderRole = 'student' | 'educator' | 'investor';
 
 export interface PricingTier {
@@ -1054,31 +1089,31 @@ export const PRICING_TIERS: PricingTier[] = [
     audience: 'Educators, Coaches & Tournament Hosts',
     monthlyPriceUsd: 29,
     annualMonthlyEquivalentUsd: 23,
-    summary: 'Unlock 8-Racer Grand Prix lobbies, Endurance 20Q+ matches, and custom question tools.',
+    summary: 'Unlock 8-Racer Grand Prix lobbies, Endurance 20+ question matches, and custom question tools.',
     features: [
       'Expanded 6-to-8 Racer Grand Prix Car Racing grids',
-      'Custom question counts up to 100 Qs & Endurance format',
+      'Custom question counts up to 100 questions & Endurance format',
       'Question Generator Studio & AI Document Import',
-      'Live multi-competitor leaderboard & performance stats',
+      'Live multi-competitor telemetry & performance stats',
     ],
     ctaLabel: 'Unlock Pro Plan',
     highlighted: true,
   },
   {
     id: 'district',
-    indexLabel: 'CAMPUS PLAN',
-    name: 'Campus & District',
+    indexLabel: 'ORGANIZATION PLAN',
+    name: 'Organization & District',
     audience: 'Schools, Universities & Organizations',
     monthlyPriceUsd: 149,
     annualMonthlyEquivalentUsd: 119,
-    summary: 'Campus-wide tournament brackets, SSO login, and curriculum management.',
+    summary: 'Organization-wide tournament brackets, roster management, and curriculum tools.',
     features: [
       'Unlimited concurrent multiplayer tournament rooms',
-      'Campus SSO & roster synchronization',
+      'Team roster & tournament bracket synchronization',
       'Cohort mastery & engagement reporting',
       'Dedicated onboarding & custom question libraries',
     ],
-    ctaLabel: 'Activate Campus Plan',
+    ctaLabel: 'Activate Organization Plan',
   },
 ];
 
@@ -1091,7 +1126,6 @@ export interface AuthFormInput {
   email: string;
   password?: string;
   fullName?: string;
-  institutionCode?: string;
   role: StakeholderRole;
   selectedTier: PricingTierId;
 }
@@ -1120,14 +1154,6 @@ export function validateAuthForm(input: AuthFormInput): {
     if (name.length < 2) {
       return { valid: false, error: 'Please enter your full name (at least 2 characters).' };
     }
-  }
-
-  if (input.mode === 'sso') {
-    const inst = (input.institutionCode || '').trim();
-    if (inst.length < 3) {
-      return { valid: false, error: 'Please enter a valid Institution or District SSO domain/code.' };
-    }
-    return { valid: true, error: null };
   }
 
   const pwd = input.password || '';
@@ -1528,6 +1554,71 @@ export function buildUrlForRoute(
   }
 }
 
+/**
+ * Normalizes and sanitizes an anonymous/guest user's editable display name.
+ * Strips HTML/control chars, collapses whitespace, enforces 28-char max, and falls back cleanly.
+ */
+export function normalizeGuestDisplayName(input: unknown, fallback = 'Contender'): string {
+  const sanitized = sanitizePlainText(input, 28);
+  if (sanitized.length >= 1) {
+    return sanitized;
+  }
+  const safeFallback = sanitizePlainText(fallback, 28);
+  return safeFallback.length >= 1 ? safeFallback : 'Contender';
+}
+
+/**
+ * Returns a descriptive browser document title for each canonical route.
+ */
+export function getRouteDocumentTitle(route: AppRouteId): string {
+  switch (route) {
+    case 'landing':
+      return 'Oxyain — High-Speed 3D Academic Tournament Suite';
+    case 'lobby':
+      return 'Tournament Lobby — Oxyain';
+    case 'waiting-room':
+      return 'Multiplayer Waiting Room — Oxyain';
+    case 'matchmaking':
+      return '1v1 Matchmaking Queue — Oxyain';
+    case 'play':
+      return 'Live 3D Match — Oxyain';
+    case 'replay':
+      return '3D Match Replay — Oxyain';
+    case 'generator':
+      return 'Question Generator Studio — Oxyain';
+    case 'extractor':
+      return 'AI Source Extraction Console — Oxyain';
+    case 'curriculum':
+      return 'Academic Curriculum — Oxyain';
+    default:
+      return 'Oxyain — High-Speed 3D Academic Tournament Suite';
+  }
+}
+
+/**
+ * Transitions a finished match ('gameover') back to the Lobby ('lobby' route, 'title' status)
+ * while preserving a snapshot of the completed match for lobby summary & 3D replay review.
+ */
+export function completeMatchAndReturnToLobby(finishedMatch: MatchState): {
+  lobbyMatchState: MatchState;
+  completedMatchSnapshot: MatchState;
+  targetRoute: AppRouteId;
+} {
+  const completedMatchSnapshot: MatchState = {
+    ...finishedMatch,
+    status: 'gameover',
+  };
+  const lobbyMatchState: MatchState = {
+    ...finishedMatch,
+    status: 'title',
+  };
+  return {
+    lobbyMatchState,
+    completedMatchSnapshot,
+    targetRoute: 'lobby',
+  };
+}
+
 // ============================================================================
 // High-Concurrency Sharding & Token-Bucket Rate Limiting (1M Users Ready)
 // ============================================================================
@@ -1595,3 +1686,5 @@ export function consumeTokenBucket(
     },
   };
 }
+
+

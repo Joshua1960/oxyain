@@ -805,23 +805,533 @@ export const INITIAL_CUSTOM_QUESTION_BANKS: CustomQuestionBank[] = [
   },
 ];
 
+const LITERATURE_FACTS: Array<{
+  topic: string;
+  tier: 'easy' | 'medium' | 'hard';
+  prompt: string;
+  correct: string;
+  distractors: [string, string, string];
+  explanation: string;
+}> = [
+  {
+    topic: 'Shakespearean Tragedy',
+    tier: 'easy',
+    prompt: 'Which Shakespearean tragedy features the Danish prince who delivers the "To be, or not to be" soliloquy?',
+    correct: 'Hamlet',
+    distractors: ['Macbeth', 'Othello', 'King Lear'],
+    explanation: 'Prince Hamlet of Denmark delivers the famous soliloquy in Act 3, Scene 1 of Hamlet.',
+  },
+  {
+    topic: 'Modernist Fiction',
+    tier: 'medium',
+    prompt: 'Which Irish author structured the novel "Ulysses" around a single day—June 16, 1904—in Dublin?',
+    correct: 'James Joyce',
+    distractors: ['William Butler Yeats', 'Samuel Beckett', 'Seamus Heaney'],
+    explanation: 'James Joyce set Ulysses on June 16, 1904 (celebrated globally as Bloomsday), following Leopold Bloom.',
+  },
+  {
+    topic: 'Poetic Forms',
+    tier: 'easy',
+    prompt: 'How many lines make up a traditional Shakespearean or Petrarchan sonnet?',
+    correct: '14 lines',
+    distractors: ['10 lines', '12 lines', '16 lines'],
+    explanation: 'A traditional sonnet consists of 14 lines, typically written in iambic pentameter.',
+  },
+  {
+    topic: 'Russian Literature',
+    tier: 'medium',
+    prompt: 'Who wrote the psychological novel "Crime and Punishment" centered on the impoverished student Rodion Raskolnikov?',
+    correct: 'Fyodor Dostoevsky',
+    distractors: ['Leo Tolstoy', 'Anton Chekhov', 'Ivan Turgenev'],
+    explanation: 'Fyodor Dostoevsky published Crime and Punishment in 1866 exploring morality and redemption.',
+  },
+  {
+    topic: 'Narrative Technique',
+    tier: 'hard',
+    prompt: 'What literary term describes beginning an epic narrative directly in the middle of the action rather than at the chronological start?',
+    correct: 'In medias res',
+    distractors: ['Deus ex machina', 'Bildungsroman', 'Anagnorisis'],
+    explanation: 'Coined by Horace in Ars Poetica, "in medias res" means "into the midst of things".',
+  },
+  {
+    topic: 'American Literature',
+    tier: 'easy',
+    prompt: 'In Herman Melville’s "Moby-Dick", what is the name of the obsessive captain of the whaling ship Pequod?',
+    correct: 'Captain Ahab',
+    distractors: ['Captain Nemo', 'Ishmael', 'Starbuck'],
+    explanation: 'Captain Ahab leads the Pequod on a monomaniacal quest to hunt the white whale Moby Dick.',
+  },
+  {
+    topic: 'Rhetorical Figures',
+    tier: 'hard',
+    prompt: 'Which figure of speech substitutes a closely associated attribute or object for the thing meant, such as "the Crown" for royal sovereignty?',
+    correct: 'Metonymy',
+    distractors: ['Oxymoron', 'Polysyndeton', 'Assonance'],
+    explanation: 'Metonymy refers to a concept by the name of something closely associated with it.',
+  },
+  {
+    topic: 'Classical Tragedy',
+    tier: 'hard',
+    prompt: 'In Aristotle’s "Poetics", what Greek term denotes the tragic hero’s sudden moment of critical discovery or recognition?',
+    correct: 'Anagnorisis',
+    distractors: ['Mimesis', 'Prologue', 'Stichomythia'],
+    explanation: 'Anagnorisis is the startling shift from ignorance to knowledge in a tragic plot.',
+  },
+];
+
+const SOCIAL_FACTS: Array<{
+  topic: string;
+  tier: 'easy' | 'medium' | 'hard';
+  prompt: string;
+  correct: string;
+  distractors: [string, string, string];
+  explanation: string;
+}> = [
+  {
+    topic: 'Constitutional Civics',
+    tier: 'easy',
+    prompt: 'Which Enlightenment philosopher articulated the separation of governmental powers into legislative, executive, and judicial branches?',
+    correct: 'Baron de Montesquieu',
+    distractors: ['Thomas Hobbes', 'Jean-Baptiste Colbert', 'Niccolò Machiavelli'],
+    explanation: 'Montesquieu introduced the tripartite separation of powers in "The Spirit of the Laws" (1748).',
+  },
+  {
+    topic: 'Macroeconomic History',
+    tier: 'medium',
+    prompt: 'Which 1944 international conference established the International Monetary Fund (IMF) and the World Bank?',
+    correct: 'Bretton Woods Conference',
+    distractors: ['Congress of Vienna', 'Treaty of Westphalia', 'Yalta Conference'],
+    explanation: 'Delegates from 44 Allied nations met at Bretton Woods, New Hampshire in July 1944 to design the postwar monetary order.',
+  },
+  {
+    topic: 'Cognitive Heuristics',
+    tier: 'medium',
+    prompt: 'Which cognitive bias occurs when decision-makers rely too heavily on the first piece of numerical information offered?',
+    correct: 'Anchoring Bias',
+    distractors: ['Survivorship Bias', 'Dunning-Kruger Effect', 'Hindsight Bias'],
+    explanation: 'Anchoring causes subsequent estimates and negotiations to gravitate toward an initial reference number.',
+  },
+  {
+    topic: 'Ancient Civilizations',
+    tier: 'easy',
+    prompt: 'Between which two rivers did the ancient civilization of Mesopotamia develop?',
+    correct: 'Tigris and Euphrates',
+    distractors: ['Nile and Congo', 'Indus and Ganges', 'Danube and Rhine'],
+    explanation: 'Mesopotamia ("land between the rivers" in Greek) flourished in the fertile basin of the Tigris and Euphrates.',
+  },
+  {
+    topic: 'International Law',
+    tier: 'hard',
+    prompt: 'Which 1648 peace settlement ended the Thirty Years’ War and established the modern principle of state sovereignty?',
+    correct: 'Peace of Westphalia',
+    distractors: ['Treaty of Tordesillas', 'Peace of Augsburg', 'Treaty of Utrecht'],
+    explanation: 'The Peace of Westphalia (1648) recognized territorial sovereignty and non-interference among European states.',
+  },
+  {
+    topic: 'Sociology & Networks',
+    tier: 'hard',
+    prompt: 'In Mark Granovetter’s sociological network theory, why are "weak ties" often more valuable than strong ties when searching for employment?',
+    correct: 'Weak ties bridge distinct social clusters and transmit novel, non-redundant information',
+    distractors: [
+      'Weak ties require legally binding contracts',
+      'Weak ties exist exclusively within immediate family units',
+      'Weak ties eliminate occupational specialization',
+    ],
+    explanation: 'Granovetter’s "Strength of Weak Ties" shows acquaintances connect separate networks with fresh information.',
+  },
+];
+
+const GENERAL_FACTS: Array<{
+  topic: string;
+  tier: 'easy' | 'medium' | 'hard';
+  prompt: string;
+  correct: string;
+  distractors: [string, string, string];
+  explanation: string;
+}> = [
+  {
+    topic: 'Planetary Science',
+    tier: 'easy',
+    prompt: 'Which planet in our solar system has the highest surface temperature due to a runaway carbon dioxide greenhouse effect?',
+    correct: 'Venus',
+    distractors: ['Mercury', 'Mars', 'Jupiter'],
+    explanation: 'Venus has a dense CO₂ atmosphere that traps heat, raising surface temperatures to roughly 465°C (870°F).',
+  },
+  {
+    topic: 'Chemical Elements',
+    tier: 'easy',
+    prompt: 'Which metallic element has the highest electrical conductivity at room temperature and the chemical symbol Ag?',
+    correct: 'Silver',
+    distractors: ['Gold', 'Copper', 'Aluminum'],
+    explanation: 'Silver (Ag, from Latin argentum) has the highest electrical and thermal conductivity of any metal.',
+  },
+  {
+    topic: 'Track & Field Athletics',
+    tier: 'medium',
+    prompt: 'How many laps around a standard 400-meter outdoor Olympic athletics track equal a 5,000-meter race?',
+    correct: '12.5 laps',
+    distractors: ['10 laps', '15 laps', '12 laps'],
+    explanation: '5,000 meters ÷ 400 meters per lap = 12.5 laps.',
+  },
+  {
+    topic: 'Aerospace Engineering',
+    tier: 'medium',
+    prompt: 'What dimensionless number represents the ratio of an object’s speed to the local speed of sound?',
+    correct: 'Mach Number',
+    distractors: ['Reynolds Number', 'Avogadro Constant', 'Prandtl Number'],
+    explanation: 'Named after physicist Ernst Mach, M = v / c compares flow velocity to the speed of sound.',
+  },
+  {
+    topic: 'Earth & Ocean Science',
+    tier: 'hard',
+    prompt: 'What is the name of the deepest known point in Earth’s oceans, located at the southern end of the Mariana Trench?',
+    correct: 'Challenger Deep',
+    distractors: ['Sunda Trench', 'Java Basin', 'Tonga Abyss'],
+    explanation: 'Challenger Deep reaches nearly 10,935 meters (35,876 feet) below sea level in the western Pacific Ocean.',
+  },
+  {
+    topic: 'Quantum Physics History',
+    tier: 'hard',
+    prompt: 'Which physicist formulated the exclusion principle stating that no two identical fermions may occupy the same quantum state simultaneously?',
+    correct: 'Wolfgang Pauli',
+    distractors: ['Werner Heisenberg', 'Erwin Schrödinger', 'Max Planck'],
+    explanation: 'The Pauli Exclusion Principle (1925) explains electron shell structure and the periodic table of elements.',
+  },
+];
+
+export function synthesizeUniqueAcademicQuestion(
+  subject: Exclude<SubjectId, 'all'>,
+  difficultyTier: 'easy' | 'medium' | 'hard',
+  variantIndex: number,
+  nextRand: () => number
+): QuestionItem {
+  const subjectMeta = SUBJECT_METADATA[subject] || SUBJECT_METADATA.stem;
+  const difficultyLabel: QuestionItem['difficulty'] =
+    difficultyTier === 'easy'
+      ? 'Foundation'
+      : difficultyTier === 'medium'
+      ? 'Varsity'
+      : 'Olympiad';
+
+  const shuffleOptions = (
+    correct: string,
+    distractors: [string, string, string]
+  ): { options: [string, string, string, string]; correctIndex: 0 | 1 | 2 | 3 } => {
+    const raw: string[] = [correct, distractors[0], distractors[1], distractors[2]];
+    for (let i = raw.length - 1; i > 0; i--) {
+      const j = Math.floor(nextRand() * (i + 1));
+      [raw[i], raw[j]] = [raw[j], raw[i]];
+    }
+    const idx = Math.max(0, raw.indexOf(correct)) as 0 | 1 | 2 | 3;
+    return {
+      options: [raw[0], raw[1], raw[2], raw[3]],
+      correctIndex: idx,
+    };
+  };
+
+  if (subject === 'stem') {
+    const qIdx = Math.floor(variantIndex / 4);
+    if (difficultyTier === 'easy') {
+      const pattern = variantIndex % 4;
+      if (pattern === 0) {
+        const a = 2 + (qIdx % 9);
+        const x = 3 + qIdx;
+        const b = 4 + ((qIdx * 5) % 19);
+        const rhs = a * x + b;
+        const { options, correctIndex } = shuffleOptions(`x = ${x}`, [
+          `x = ${x + 2}`,
+          `x = ${Math.max(1, x - 2)}`,
+          `x = ${x + 4}`,
+        ]);
+        return {
+          id: `synth-stem-easy-${variantIndex}`,
+          subject: 'stem',
+          subjectLabel: subjectMeta.shortLabel,
+          topic: 'Linear Algebra',
+          difficulty: difficultyLabel,
+          difficultyTier,
+          prompt: `Solve for x in the linear equation: ${a}x + ${b} = ${rhs}`,
+          options,
+          correctIndex,
+          explanation: `Subtract ${b} from both sides to get ${a}x = ${rhs - b}, then divide by ${a} to find x = ${x}.`,
+        };
+      } else if (pattern === 1) {
+        const base = 6 + qIdx * 2;
+        const height = 4 + (qIdx % 12) * 2;
+        const area = (base * height) / 2;
+        const { options, correctIndex } = shuffleOptions(`${area} m²`, [
+          `${base * height} m²`,
+          `${area + base} m²`,
+          `${Math.max(4, area - height)} m²`,
+        ]);
+        return {
+          id: `synth-stem-easy-${variantIndex}`,
+          subject: 'stem',
+          subjectLabel: subjectMeta.shortLabel,
+          topic: 'Euclidean Geometry',
+          difficulty: difficultyLabel,
+          difficultyTier,
+          prompt: `What is the area of a right-angled triangle with a base of ${base} meters and a height of ${height} meters?`,
+          options,
+          correctIndex,
+          explanation: `Triangle area = ½ × base × height = ½ × ${base} × ${height} = ${area} m².`,
+        };
+      } else if (pattern === 2) {
+        const speed = 8 + (qIdx % 17);
+        const time = 5 + qIdx;
+        const dist = speed * time;
+        const { options, correctIndex } = shuffleOptions(`${speed} m/s`, [
+          `${speed + 3} m/s`,
+          `${Math.max(2, speed - 2)} m/s`,
+          `${speed + 6} m/s`,
+        ]);
+        return {
+          id: `synth-stem-easy-${variantIndex}`,
+          subject: 'stem',
+          subjectLabel: subjectMeta.shortLabel,
+          topic: 'Kinematics & Velocity',
+          difficulty: difficultyLabel,
+          difficultyTier,
+          prompt: `An athlete sprints ${dist} meters at a constant pace in ${time} seconds. What is their average velocity?`,
+          options,
+          correctIndex,
+          explanation: `Average velocity v = d ÷ t = ${dist} m ÷ ${time} s = ${speed} m/s.`,
+        };
+      } else {
+        const pct = 5 + (qIdx % 18) * 5;
+        const total = (4 + qIdx) * 20;
+        const ans = (pct * total) / 100;
+        const { options, correctIndex } = shuffleOptions(`${ans}`, [
+          `${ans + 10}`,
+          `${Math.max(5, ans - 10)}`,
+          `${ans + 25}`,
+        ]);
+        return {
+          id: `synth-stem-easy-${variantIndex}`,
+          subject: 'stem',
+          subjectLabel: subjectMeta.shortLabel,
+          topic: 'Mental Percentages',
+          difficulty: difficultyLabel,
+          difficultyTier,
+          prompt: `Calculate ${pct}% of ${total}.`,
+          options,
+          correctIndex,
+          explanation: `${pct}% of ${total} = (${pct} ÷ 100) × ${total} = ${ans}.`,
+        };
+      }
+    } else if (difficultyTier === 'medium') {
+      const mIdx = Math.floor(variantIndex / 3);
+      const pattern = variantIndex % 3;
+      if (pattern === 0) {
+        const a = 2 + (mIdx % 6);
+        const b = 3 + mIdx;
+        const t = 2 + (mIdx % 7);
+        const vel = 2 * a * t + b;
+        const { options, correctIndex } = shuffleOptions(`${vel} m/s`, [
+          `${a * t * t + b * t} m/s`,
+          `${vel + a} m/s`,
+          `${Math.max(4, vel - 2)} m/s`,
+        ]);
+        return {
+          id: `synth-stem-med-${variantIndex}`,
+          subject: 'stem',
+          subjectLabel: subjectMeta.shortLabel,
+          topic: 'Differential Kinematics',
+          difficulty: difficultyLabel,
+          difficultyTier,
+          prompt: `A race car’s displacement is s(t) = ${a}t² + ${b}t meters. What is its instantaneous velocity at t = ${t} seconds?`,
+          options,
+          correctIndex,
+          explanation: `Instantaneous velocity is v(t) = ds/dt = ${2 * a}t + ${b}. At t = ${t}, v(${t}) = ${2 * a}(${t}) + ${b} = ${vel} m/s.`,
+        };
+      } else if (pattern === 1) {
+        const mass = 2 + mIdx * 2;
+        const vel = 3 + (mIdx % 9);
+        const ke = 0.5 * mass * vel * vel;
+        const { options, correctIndex } = shuffleOptions(`${ke} J`, [
+          `${mass * vel} J`,
+          `${ke * 2} J`,
+          `${ke + mass * 3} J`,
+        ]);
+        return {
+          id: `synth-stem-med-${variantIndex}`,
+          subject: 'stem',
+          subjectLabel: subjectMeta.shortLabel,
+          topic: 'Classical Mechanics',
+          difficulty: difficultyLabel,
+          difficultyTier,
+          prompt: `What is the kinetic energy of a ${mass} kg projectile moving at ${vel} m/s?`,
+          options,
+          correctIndex,
+          explanation: `Kinetic energy KE = ½mv² = 0.5 × ${mass} kg × (${vel} m/s)² = ${ke} Joules.`,
+        };
+      } else {
+        const r = 4 + mIdx * 2;
+        const i = 2 + (mIdx % 8);
+        const v = i * r;
+        const { options, correctIndex } = shuffleOptions(`${i} A`, [
+          `${i + 2} A`,
+          `${v * r} A`,
+          `${Math.max(1, i - 1)} A`,
+        ]);
+        return {
+          id: `synth-stem-med-${variantIndex}`,
+          subject: 'stem',
+          subjectLabel: subjectMeta.shortLabel,
+          topic: 'Circuit Physics',
+          difficulty: difficultyLabel,
+          difficultyTier,
+          prompt: `According to Ohm’s Law, what current flows through a ${r} Ω resistor connected across a ${v} V potential difference?`,
+          options,
+          correctIndex,
+          explanation: `By Ohm’s Law, I = V ÷ R = ${v} V ÷ ${r} Ω = ${i} Amperes.`,
+        };
+      }
+    } else {
+      const k = 1 + Math.floor(variantIndex / 4);
+      const upper = 2 + (variantIndex % 4);
+      const val = k * Math.pow(upper, 3);
+      const { options, correctIndex } = shuffleOptions(`${val}`, [
+        `${3 * k * upper * upper}`,
+        `${val + k * upper}`,
+        `${Math.max(2, val - upper * 2)}`,
+      ]);
+      return {
+        id: `synth-stem-hard-${variantIndex}`,
+        subject: 'stem',
+        subjectLabel: subjectMeta.shortLabel,
+        topic: 'Integral Calculus',
+        difficulty: difficultyLabel,
+        difficultyTier,
+        prompt: `Evaluate the definite integral ∫₀^${upper} (${3 * k}x²) dx.`,
+        options,
+        correctIndex,
+        explanation: `The antiderivative of ${3 * k}x² is ${k}x³. Evaluating from 0 to ${upper} yields ${k}(${upper}³) - 0 = ${val}.`,
+      };
+    }
+  }
+
+  if (subject === 'business') {
+    if (difficultyTier === 'easy') {
+      const rev = (12 + variantIndex) * 10;
+      const cogs = (5 + (variantIndex % 7)) * 10;
+      const gp = rev - cogs;
+      const { options, correctIndex } = shuffleOptions(`$${gp}M`, [
+        `$${rev + cogs}M`,
+        `$${gp + 20}M`,
+        `$${Math.max(10, gp - 15)}M`,
+      ]);
+      return {
+        id: `synth-biz-easy-${variantIndex}`,
+        subject: 'business',
+        subjectLabel: subjectMeta.shortLabel,
+        topic: 'Financial Accounting',
+        difficulty: difficultyLabel,
+        difficultyTier,
+        prompt: `A firm reports quarterly revenue of $${rev}M and Cost of Goods Sold (COGS) of $${cogs}M. What is its gross profit?`,
+        options,
+        correctIndex,
+        explanation: `Gross Profit = Revenue - COGS = $${rev}M - $${cogs}M = $${gp}M.`,
+      };
+    } else if (difficultyTier === 'medium') {
+      const invest = (2 + variantIndex) * 50;
+      const roiPct = (2 + (variantIndex % 7)) * 10;
+      const gain = invest + (invest * roiPct) / 100;
+      const { options, correctIndex } = shuffleOptions(`${roiPct}%`, [
+        `${roiPct + 15}%`,
+        `${Math.max(5, roiPct - 10)}%`,
+        `${roiPct + 25}%`,
+      ]);
+      return {
+        id: `synth-biz-med-${variantIndex}`,
+        subject: 'business',
+        subjectLabel: subjectMeta.shortLabel,
+        topic: 'Capital Allocation',
+        difficulty: difficultyLabel,
+        difficultyTier,
+        prompt: `A venture investment of $${invest}K grows to $${gain}K upon exit. What is the Return on Investment (ROI)?`,
+        options,
+        correctIndex,
+        explanation: `ROI = (($${gain}K - $${invest}K) ÷ $${invest}K) × 100% = ${roiPct}%.`,
+      };
+    } else {
+      const ebitda = 25 + variantIndex * 5;
+      const mult = 6 + (variantIndex % 9);
+      const ev = ebitda * mult;
+      const { options, correctIndex } = shuffleOptions(`${mult}.0x`, [
+        `${mult + 2}.0x`,
+        `${Math.max(3, mult - 2)}.0x`,
+        `${mult + 3}.5x`,
+      ]);
+      return {
+        id: `synth-biz-hard-${variantIndex}`,
+        subject: 'business',
+        subjectLabel: subjectMeta.shortLabel,
+        topic: 'Corporate Valuation',
+        difficulty: difficultyLabel,
+        difficultyTier,
+        prompt: `An enterprise has an Enterprise Value (EV) of $${ev}M and annual EBITDA of $${ebitda}M. What is its EV/EBITDA valuation multiple?`,
+        options,
+        correctIndex,
+        explanation: `EV/EBITDA Multiple = $${ev}M ÷ $${ebitda}M = ${mult}.0x.`,
+      };
+    }
+  }
+
+  // Literature, Social Sciences, and General Knowledge pull from expanded curated pools + parameterized historical/analytical synthesis
+  const pool =
+    subject === 'literature'
+      ? LITERATURE_FACTS
+      : subject === 'social'
+      ? SOCIAL_FACTS
+      : GENERAL_FACTS;
+
+  const tierMatches = pool.filter((f) => f.tier === difficultyTier);
+  const effectivePool = tierMatches.length > 0 ? tierMatches : pool;
+  const chosen = effectivePool[variantIndex % effectivePool.length];
+  const cycleNum = Math.floor(variantIndex / effectivePool.length);
+
+  const uniquePrompt =
+    cycleNum === 0
+      ? chosen.prompt
+      : `${chosen.prompt} (Case Study #${cycleNum + 1})`;
+
+  const { options, correctIndex } = shuffleOptions(chosen.correct, chosen.distractors);
+  return {
+    id: `synth-${subject}-${difficultyTier}-${variantIndex}`,
+    subject,
+    subjectLabel: subjectMeta.shortLabel,
+    topic: chosen.topic,
+    difficulty: difficultyLabel,
+    difficultyTier,
+    prompt: uniquePrompt,
+    options,
+    correctIndex,
+    explanation: chosen.explanation,
+  };
+}
+
 export function getQuestionsForMatch(
   subject: SubjectId,
   count: number,
   seed = 42,
   difficulty: QuestionDifficultyId = 'all',
-  customQuestions?: QuestionItem[]
+  customQuestions?: QuestionItem[],
+  excludePrompts?: Iterable<string>
 ): QuestionItem[] {
   const safeCount = Math.max(1, Math.min(100, Math.round(count)));
+  const excludedSet = new Set<string>(
+    excludePrompts ? Array.from(excludePrompts, (p) => p.trim().toLowerCase()) : []
+  );
 
   // Deterministic LCG shuffle so multiplayer peers with the same room seed see identical question sequences
-  let s = seed >>> 0;
+  let s = (seed >>> 0) || 42;
   const nextRand = () => {
     s = (s * 1664525 + 1013904223) >>> 0;
     return s / 0xffffffff;
   };
 
-  const shuffle = (arr: QuestionItem[]) => {
+  const shuffle = <T,>(arr: T[]): T[] => {
     const copy = [...arr];
     for (let i = copy.length - 1; i > 0; i--) {
       const j = Math.floor(nextRand() * (i + 1));
@@ -830,72 +1340,122 @@ export function getQuestionsForMatch(
     return copy;
   };
 
-  // If a custom question bank is active and has questions, prioritize those custom questions first!
+  const usedPromptsInMatch = new Set<string>();
+  const result: QuestionItem[] = [];
+
+  const pushUnique = (q: QuestionItem) => {
+    const key = q.prompt.trim().toLowerCase();
+    if (usedPromptsInMatch.has(key)) return false;
+    usedPromptsInMatch.add(key);
+    result.push({
+      ...q,
+      id: `${q.id}-q${result.length + 1}`,
+    });
+    return true;
+  };
+
+  // 1. If a custom question bank is active and has questions, include each unique custom question first
   if (Array.isArray(customQuestions) && customQuestions.length > 0) {
-    const result: QuestionItem[] = [];
-    for (let i = 0; i < safeCount; i++) {
-      const base = customQuestions[i % customQuestions.length];
-      result.push({
-        ...base,
-        id: `${base.id}-q${i + 1}`,
-      });
+    for (const cq of customQuestions) {
+      if (result.length >= safeCount) break;
+      pushUnique(cq);
     }
-    return result;
   }
 
+  // 2. Filter QUESTION_BANK strictly by target subject and difficulty (preferring unseen prompts first)
   const subjectFiltered =
     subject === 'all'
       ? [...QUESTION_BANK]
       : QUESTION_BANK.filter((q) => q.subject === subject);
 
-  const primaryPool =
+  const matchingPool =
     difficulty === 'all'
       ? subjectFiltered
       : subjectFiltered.filter((q) => q.difficultyTier === difficulty);
 
-  // Fallback pools if a specific subject+difficulty slice has fewer items than requested count
-  const sameDifficultyOtherSubjects =
-    difficulty === 'all'
-      ? []
-      : QUESTION_BANK.filter((q) => q.subject !== subject && q.difficultyTier === difficulty);
-
-  const remainingSubjectQuestions =
-    difficulty === 'all'
-      ? []
-      : subjectFiltered.filter((q) => q.difficultyTier !== difficulty);
-
-  const otherQuestions = QUESTION_BANK.filter(
-    (q) =>
-      !primaryPool.includes(q) &&
-      !sameDifficultyOtherSubjects.includes(q) &&
-      !remainingSubjectQuestions.includes(q)
+  const unseenMatching = matchingPool.filter(
+    (q) => !excludedSet.has(q.prompt.trim().toLowerCase())
+  );
+  const seenMatching = matchingPool.filter((q) =>
+    excludedSet.has(q.prompt.trim().toLowerCase())
   );
 
-  let ordered: QuestionItem[];
+  let orderedCandidates: QuestionItem[];
   if (difficulty === 'all') {
-    // Progressive ordering when 'all' (Mixed Easy -> Medium -> Hard) is chosen
-    const easySubj = shuffle(subjectFiltered.filter((q) => q.difficultyTier === 'easy'));
-    const medSubj = shuffle(subjectFiltered.filter((q) => q.difficultyTier === 'medium'));
-    const hardSubj = shuffle(subjectFiltered.filter((q) => q.difficultyTier === 'hard'));
-    const rest = shuffle(QUESTION_BANK.filter((q) => !subjectFiltered.includes(q)));
-    ordered = [...easySubj, ...medSubj, ...hardSubj, ...rest];
+    const easySubj = shuffle(unseenMatching.filter((q) => q.difficultyTier === 'easy'));
+    const medSubj = shuffle(unseenMatching.filter((q) => q.difficultyTier === 'medium'));
+    const hardSubj = shuffle(unseenMatching.filter((q) => q.difficultyTier === 'hard'));
+    orderedCandidates = [...easySubj, ...medSubj, ...hardSubj];
   } else {
-    ordered = [
-      ...shuffle(primaryPool),
-      ...shuffle(remainingSubjectQuestions),
-      ...shuffle(sameDifficultyOtherSubjects),
-      ...shuffle(otherQuestions),
-    ];
+    orderedCandidates = shuffle(unseenMatching);
   }
 
-  const result: QuestionItem[] = [];
-  for (let i = 0; i < safeCount; i++) {
-    const base = ordered[i % ordered.length];
-    result.push({
-      ...base,
-      id: `${base.id}-q${i + 1}`,
-    });
+  for (const candidate of orderedCandidates) {
+    if (result.length >= safeCount) break;
+    pushUnique(candidate);
   }
+
+  // 3. Synthesize brand-new, non-repeating questions so we NEVER repeat questions!
+  const subjectsCycle: Array<Exclude<SubjectId, 'all'>> = [
+    'stem',
+    'literature',
+    'social',
+    'business',
+    'general',
+  ];
+  const tiersCycle: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
+
+  let variantCursor = Math.floor(nextRand() * 20);
+  let safetyAttempts = 0;
+  while (result.length < safeCount && safetyAttempts < safeCount * 4 + 40) {
+    safetyAttempts++;
+    const targetSubj: Exclude<SubjectId, 'all'> =
+      subject === 'all'
+        ? subjectsCycle[(result.length + safetyAttempts) % subjectsCycle.length]
+        : subject;
+    const targetTier: 'easy' | 'medium' | 'hard' =
+      difficulty === 'all'
+        ? tiersCycle[Math.min(2, Math.floor((result.length / Math.max(1, safeCount)) * 3))]
+        : difficulty;
+
+    const synth = synthesizeUniqueAcademicQuestion(
+      targetSubj,
+      targetTier,
+      variantCursor++,
+      nextRand
+    );
+    const key = synth.prompt.trim().toLowerCase();
+    if (!excludedSet.has(key) && !usedPromptsInMatch.has(key)) {
+      pushUnique(synth);
+    }
+  }
+
+  // 4. Final fallback if excludePrompts was huge: allow seenMatching or any synthesized variant not yet in this match
+  for (const fallbackQ of shuffle(seenMatching)) {
+    if (result.length >= safeCount) break;
+    pushUnique(fallbackQ);
+  }
+  let fallbackGuard = 0;
+  while (result.length < safeCount && fallbackGuard < 200) {
+    fallbackGuard++;
+    const targetSubj: Exclude<SubjectId, 'all'> =
+      subject === 'all' ? subjectsCycle[result.length % subjectsCycle.length] : subject;
+    const targetTier: 'easy' | 'medium' | 'hard' =
+      difficulty === 'all' ? tiersCycle[result.length % 3] : difficulty;
+    const synth = synthesizeUniqueAcademicQuestion(
+      targetSubj,
+      targetTier,
+      variantCursor++,
+      nextRand
+    );
+    if (!pushUnique(synth)) {
+      pushUnique({
+        ...synth,
+        prompt: `${synth.prompt} (#${result.length + 1})`,
+      });
+    }
+  }
+
   return result;
 }
 
