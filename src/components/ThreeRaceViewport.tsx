@@ -1410,6 +1410,9 @@ export const ThreeRaceViewport: React.FC<ThreeRaceViewportProps> = ({
       tartanTex.dispose();
       microBumpTex.dispose();
       carbonTex.dispose();
+      if (renderer.domElement && renderer.domElement.parentElement) {
+        renderer.domElement.parentElement.removeChild(renderer.domElement);
+      }
       renderer.dispose();
     };
   }, [matchRef]);

@@ -49,6 +49,7 @@ interface TitleScreenModalProps {
   setRoomCodeInput: (c: string) => void;
   roomCodeError: string | null;
   setRoomCodeError: (err: string | null) => void;
+  roomError?: string | null;
   proGateNotice: string | null;
   setProGateNotice: (msg: string | null) => void;
   onStartMatch: () => void;
@@ -93,6 +94,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
   setRoomCodeInput,
   roomCodeError,
   setRoomCodeError,
+  roomError,
   proGateNotice,
   setProGateNotice,
   onStartMatch,
@@ -101,6 +103,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
   onOpenLoginForPro,
   session,
   liveRoomPeers = [],
+  activeRooms = [],
   onOpenSourceExtractor,
   onOpenQuickMatchQueue,
   onOpenWaitingRoom,
@@ -439,6 +442,38 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
                 <p role="alert" className="text-xs text-rose-400">
                   {roomCodeError}
                 </p>
+              )}
+
+              {roomError && (
+                <p role="alert" className="text-xs text-rose-400">
+                  {roomError}
+                </p>
+              )}
+
+              {activeRooms && activeRooms.filter((r) => r.status === 'lobby' && r.roomCode !== roomCodeInput).length > 0 && (
+                <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                  <div className="text-[11px] font-mono text-slate-400">Open Active Rooms:</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeRooms
+                      .filter((r) => r.status === 'lobby' && r.roomCode !== roomCodeInput)
+                      .slice(0, 4)
+                      .map((r) => (
+                        <button
+                          key={r.roomCode}
+                          type="button"
+                          onClick={() => {
+                            setRoomCodeInput(r.roomCode);
+                            setSport(r.sport);
+                            setSubject(r.subject);
+                            setRoomCodeError(null);
+                          }}
+                          className="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-cyan-300 cursor-pointer"
+                        >
+                          {r.roomCode} ({r.playerCount}/{r.competitorCount})
+                        </button>
+                      ))}
+                  </div>
+                </div>
               )}
             </div>
           )}

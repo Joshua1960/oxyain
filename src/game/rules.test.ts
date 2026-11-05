@@ -5,6 +5,7 @@ import {
   CORRECT_SPEED_BOOST_KMH,
   STREAK_SPEED_BOOST_KMH,
   WRONG_SPEED_PENALTY_KMH,
+  SportDiscipline,
   MATCH_LENGTHS,
   PRICING_TIERS,
   createInitialPlayerState,
@@ -998,6 +999,52 @@ test('Question generator never repeats questions within a 100-question match or 
   assert.equal(combinedPrompts.length, 30);
   assert.equal(new Set(combinedPrompts).size, 30);
 });
+
+test('Multiplayer tournament seed ensures deterministic identical questions for all competitors in a room', () => {
+  const matchSeed = 987654321;
+  const hostMatch = createMatchState({
+    sport: 'racing',
+    subject: 'stem',
+    questionDifficulty: 'medium',
+    questionCount: 10,
+    matchLength: 'circuit',
+    mode: 'custom',
+    roomCode: 'RACE-77X',
+    seed: matchSeed,
+  });
+
+  const peerMatch = createMatchState({
+    sport: 'racing',
+    subject: 'stem',
+    questionDifficulty: 'medium',
+    questionCount: 10,
+    matchLength: 'circuit',
+    mode: 'custom',
+    roomCode: 'RACE-77X',
+    seed: matchSeed,
+  });
+
+  assert.equal(hostMatch.questions.length, 10);
+  assert.equal(peerMatch.questions.length, 10);
+  for (let i = 0; i < 10; i++) {
+    assert.equal(hostMatch.questions[i].id, peerMatch.questions[i].id);
+    assert.equal(hostMatch.questions[i].prompt, peerMatch.questions[i].prompt);
+    assert.equal(hostMatch.questions[i].correctIndex, peerMatch.questions[i].correctIndex);
+  }
+});
+
+test('Room code generator leverages full alphanumeric alphabet and produces valid codes across all sports', () => {
+  const generatedCodes = new Set<string>();
+  const sports: SportDiscipline[] = ['racing', 'sprinting', 'hurdles'];
+  for (let i = 0; i < 60; i++) {
+    const sp = sports[i % sports.length];
+    const code = generateRoomCode(undefined, sp);
+    assert.ok(isValidRoomCode(code), `Code ${code} must be valid room code`);
+    generatedCodes.add(code);
+  }
+  assert.ok(generatedCodes.size >= 40);
+});
+
 
 
 

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import path from 'path';
@@ -107,6 +108,7 @@ interface GameRoom {
   velocityPreset: VelocityPreset;
   hostId: string;
   hostName: string;
+  matchSeed?: number;
   status: 'lobby' | 'playing';
   createdAt: number;
   players: Map<string, RoomPlayer>;
@@ -245,6 +247,7 @@ function serializeRoomState(room: GameRoom) {
     velocityPreset: room.velocityPreset,
     hostId: room.hostId,
     hostName: room.hostName,
+    matchSeed: room.matchSeed,
     status: room.status,
     players: Array.from(room.players.values()).map((p) => ({
       id: p.id,
@@ -1295,6 +1298,9 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
             setRoomInStore(room);
             currentRoomCode = pairedRoomCode;
 
+            const queueSeed = ((Date.now() ^ 0x5bd1e995) >>> 0);
+            room.matchSeed = queueSeed;
+
             safeWsSend(
               matchedPeer.ws,
               JSON.stringify({
@@ -1305,6 +1311,7 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
                 opponentRating: 1940,
                 isHumanOpponent: true,
                 redisChannel: 'mm:1v1:paired',
+                seed: queueSeed,
               })
             );
             safeWsSend(
@@ -1317,6 +1324,7 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
                 opponentRating: 1940,
                 isHumanOpponent: true,
                 redisChannel: 'mm:1v1:paired',
+                seed: queueSeed,
               })
             );
             broadcastToRoom(room, serializeRoomState(room));
@@ -1369,6 +1377,9 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
               setRoomInStore(room);
               currentRoomCode = pairedRoomCode;
 
+              const autoPairSeed = ((Date.now() ^ 0x5bd1e995) >>> 0);
+              room.matchSeed = autoPairSeed;
+
               safeWsSend(
                 stillQueued.ws,
                 JSON.stringify({
@@ -1379,6 +1390,7 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
                   opponentRating: 1890,
                   isHumanOpponent: false,
                   redisChannel: 'mm:1v1:paired',
+                  seed: autoPairSeed,
                 })
               );
               broadcastToRoom(room, serializeRoomState(room));
@@ -1421,6 +1433,7 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
           removePlayerFromQueue(playerId);
           const sport: SportDiscipline = entry?.sport || data.sport || 'racing';
           const pairedRoomCode = generateRoomCode(undefined, sport);
+          const forceSeed = ((Date.now() ^ 0x5bd1e995) >>> 0);
           safeWsSend(
             ws,
             JSON.stringify({
@@ -1431,6 +1444,7 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
               opponentRating: 1910,
               isHumanOpponent: false,
               redisChannel: 'mm:1v1:paired',
+              seed: forceSeed,
             })
           );
         } else if (data.type === 'queue:leave') {
@@ -1502,6 +1516,7 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
           if (data.rivalDifficulty) room.rivalDifficulty = data.rivalDifficulty;
           if (data.velocityPreset) room.velocityPreset = data.velocityPreset;
 
+          room.matchSeed = ((Date.now() ^ 0x5bd1e995) >>> 0);
           room.status = 'playing';
 
           // Reset all connected human players in the room to the starting line

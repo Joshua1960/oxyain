@@ -239,7 +239,7 @@ export function generateRoomCode(seed?: number, sport?: SportDiscipline): string
     }
     const d1 = Math.floor(Math.random() * 9) + 1;
     const d2 = Math.floor(Math.random() * 9) + 1;
-    const ch = alphanum[Math.floor(Math.random() * letters.length)];
+    const ch = alphanum[Math.floor(Math.random() * alphanum.length)];
     return `${prefix}-${d1}${d2}${ch}`;
   }
 

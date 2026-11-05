@@ -1,9 +1,11 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ActiveRoomSummary,
   AppRouteId,
@@ -40,50 +42,55 @@ import {
   submitMatchAnswer,
   syncRemotePeersIntoMatch,
   terminateMatchByHost,
-} from './game/rules';
+} from "./game/rules";
 import {
   CustomQuestionBank,
   INITIAL_CUSTOM_QUESTION_BANKS,
   QuestionDifficultyId,
   QuestionItem,
   SubjectId,
-} from './game/questions';
-import { soundFX } from './game/sound';
-import { TitleScreenModal } from './components/TitleScreenModal';
-import { PlayingHudAndQuizDeck } from './components/PlayingHudAndQuizDeck';
-import { StatusModalCard } from './components/StatusModalCard';
-import { LocalReplayArenaModal } from './components/LocalReplayArenaModal';
-import { CurriculumDrawerModal } from './components/CurriculumDrawerModal';
-import { Scr01LandingPortal } from './components/Scr01LandingPortal';
-import { Scr09QuestionGeneratorDashboard } from './components/Scr09QuestionGeneratorDashboard';
-import { Scr10AiSourceExtractionConsole } from './components/Scr10AiSourceExtractionConsole';
-import { AuthModal } from './components/AuthModal';
-import { QuickMatchQueueModal } from './components/QuickMatchQueueModal';
-import { WaitingRoomModal } from './components/WaitingRoomModal';
+} from "./game/questions";
+import { soundFX } from "./game/sound";
+import { TitleScreenModal } from "./components/TitleScreenModal";
+import { PlayingHudAndQuizDeck } from "./components/PlayingHudAndQuizDeck";
+import { StatusModalCard } from "./components/StatusModalCard";
+import { LocalReplayArenaModal } from "./components/LocalReplayArenaModal";
+import { CurriculumDrawerModal } from "./components/CurriculumDrawerModal";
+import { Scr01LandingPortal } from "./components/Scr01LandingPortal";
+import { Scr09QuestionGeneratorDashboard } from "./components/Scr09QuestionGeneratorDashboard";
+import { Scr10AiSourceExtractionConsole } from "./components/Scr10AiSourceExtractionConsole";
+import { AuthModal } from "./components/AuthModal";
+import { QuickMatchQueueModal } from "./components/QuickMatchQueueModal";
+import { WaitingRoomModal } from "./components/WaitingRoomModal";
 
 const ThreeRaceViewport = lazy(() =>
-  import('./components/ThreeRaceViewport').then((module) => ({
+  import("./components/ThreeRaceViewport").then((module) => ({
     default: module.ThreeRaceViewport,
-  }))
+  })),
 );
 
 export default function App() {
   const initialResolved =
-    typeof window !== 'undefined'
-      ? resolveRouteFromLocation(window.location.pathname, window.location.search)
-      : { route: 'landing' as AppRouteId, autostart: false };
+    typeof window !== "undefined"
+      ? resolveRouteFromLocation(
+          window.location.pathname,
+          window.location.search,
+        )
+      : { route: "landing" as AppRouteId, autostart: false };
 
-  const [activeRoute, setActiveRoute] = useState<AppRouteId>(initialResolved.route);
+  const [activeRoute, setActiveRoute] = useState<AppRouteId>(
+    initialResolved.route,
+  );
   const activeRouteRef = useRef<AppRouteId>(initialResolved.route);
   activeRouteRef.current = activeRoute;
   const [showPublicPortal, setShowPublicPortal] = useState<boolean>(
-    initialResolved.route === 'landing'
+    initialResolved.route === "landing",
   );
   const [isGeneratorOpen, setIsGeneratorOpen] = useState<boolean>(
-    initialResolved.route === 'generator'
+    initialResolved.route === "generator",
   );
   const [isExtractorOpen, setIsExtractorOpen] = useState<boolean>(
-    initialResolved.route === 'extractor'
+    initialResolved.route === "extractor",
   );
   const [session, setSession] = useState<AuthenticatedSession | null>(null);
   const [authModalState, setAuthModalState] = useState<{
@@ -93,41 +100,45 @@ export default function App() {
     role: StakeholderRole;
   }>({
     isOpen: false,
-    mode: 'signup',
-    tier: 'classroom',
-    role: 'educator',
+    mode: "signup",
+    tier: "classroom",
+    role: "educator",
   });
 
   const [customBanks, setCustomBanks] = useState<CustomQuestionBank[]>(
-    INITIAL_CUSTOM_QUESTION_BANKS
+    INITIAL_CUSTOM_QUESTION_BANKS,
   );
   const [activeBankId, setActiveBankId] = useState<string>(
-    INITIAL_CUSTOM_QUESTION_BANKS[0].id
+    INITIAL_CUSTOM_QUESTION_BANKS[0].id,
   );
-  const [selectedRaceBank, setSelectedRaceBank] = useState<CustomQuestionBank | null>(
-    null
-  );
+  const [selectedRaceBank, setSelectedRaceBank] =
+    useState<CustomQuestionBank | null>(null);
 
-  const [sport, setSport] = useState<SportDiscipline>(initialResolved.sport || 'racing');
-  const [subject, setSubject] = useState<SubjectId>('stem');
-  const [questionDifficulty, setQuestionDifficulty] = useState<QuestionDifficultyId>('easy');
+  const [sport, setSport] = useState<SportDiscipline>(
+    initialResolved.sport || "racing",
+  );
+  const [subject, setSubject] = useState<SubjectId>("stem");
+  const [questionDifficulty, setQuestionDifficulty] =
+    useState<QuestionDifficultyId>("easy");
   const [questionCount, setQuestionCount] = useState<number>(5);
-  const [matchLength, setMatchLength] = useState<MatchLengthId>('sprint');
+  const [matchLength, setMatchLength] = useState<MatchLengthId>("sprint");
   const [mode, setMode] = useState<MultiplayerMode>(
-    initialResolved.route === 'matchmaking' ? 'quickplay' : 'custom'
+    initialResolved.route === "matchmaking" ? "quickplay" : "custom",
   );
   const [competitorCount, setCompetitorCount] = useState<CompetitorCount>(
-    initialResolved.route === 'matchmaking' ? 2 : 4
+    initialResolved.route === "matchmaking" ? 2 : 4,
   );
-  const [rivalDifficulty, setRivalDifficulty] = useState<RivalDifficulty>('standard');
-  const [velocityPreset, setVelocityPreset] = useState<VelocityPreset>('standard');
+  const [rivalDifficulty, setRivalDifficulty] =
+    useState<RivalDifficulty>("standard");
+  const [velocityPreset, setVelocityPreset] =
+    useState<VelocityPreset>("standard");
   const [roomCodeInput, setRoomCodeInput] = useState<string>(
-    initialResolved.roomCode || 'RACE-101'
+    initialResolved.roomCode || "RACE-101",
   );
   const [roomCodeError, setRoomCodeError] = useState<string | null>(null);
   const [proGateNotice, setProGateNotice] = useState<string | null>(null);
   const [isCurriculumOpen, setIsCurriculumOpen] = useState(
-    initialResolved.route === 'curriculum'
+    initialResolved.route === "curriculum",
   );
   const [muted, setMuted] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
@@ -138,26 +149,31 @@ export default function App() {
   const [hasLiveRemotePeer, setHasLiveRemotePeer] = useState(false);
   const [replayStepIndex, setReplayStepIndex] = useState<number>(0);
   const [isQueueModalOpen, setIsQueueModalOpen] = useState<boolean>(
-    initialResolved.route === 'matchmaking'
+    initialResolved.route === "matchmaking",
   );
   const [queueState, setQueueState] = useState<MatchmakingQueueState>(() =>
-    createInitialQueueState()
+    createInitialQueueState(),
   );
   const [isWaitingRoomOpen, setIsWaitingRoomOpen] = useState<boolean>(
-    initialResolved.route === 'waiting-room'
+    initialResolved.route === "waiting-room",
   );
   const [localIsReady, setLocalIsReady] = useState<boolean>(true);
   const [isLocalHost, setIsLocalHost] = useState<boolean>(true);
 
-  const clientPlayerIdRef = useRef<string>(`p-${Math.random().toString(36).slice(2, 9)}`);
+  const clientPlayerIdRef = useRef<string>(
+    `p-${Math.random().toString(36).slice(2, 9)}`,
+  );
   const fallbackCallsign = `Contender-${clientPlayerIdRef.current.slice(-3).toUpperCase()}`;
   const [guestDisplayName, setGuestDisplayName] = useState<string>(() => {
     if (initialResolved.player) {
-      return normalizeGuestDisplayName(initialResolved.player, fallbackCallsign);
+      return normalizeGuestDisplayName(
+        initialResolved.player,
+        fallbackCallsign,
+      );
     }
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
-        const saved = window.localStorage.getItem('oxyain_guest_display_name');
+        const saved = window.localStorage.getItem("oxyain_guest_display_name");
         if (saved && saved.trim().length > 0) {
           return normalizeGuestDisplayName(saved, fallbackCallsign);
         }
@@ -169,58 +185,61 @@ export default function App() {
   });
 
   const defaultGuestCallsignRef = useRef<string>(
-    normalizeGuestDisplayName(guestDisplayName, fallbackCallsign)
+    normalizeGuestDisplayName(guestDisplayName, fallbackCallsign),
   );
   defaultGuestCallsignRef.current = normalizeGuestDisplayName(
     guestDisplayName,
-    fallbackCallsign
+    fallbackCallsign,
   );
 
   const handleUpdateGuestDisplayName = useCallback(
     (nextRaw: string) => {
-      const cleaned = nextRaw.replace(/<[^>]*>/g, '').slice(0, 28);
+      const cleaned = nextRaw.replace(/<[^>]*>/g, "").slice(0, 28);
       setGuestDisplayName(cleaned);
       const normalized = normalizeGuestDisplayName(cleaned, fallbackCallsign);
       defaultGuestCallsignRef.current = normalized;
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         try {
-          window.localStorage.setItem('oxyain_guest_display_name', normalized);
+          window.localStorage.setItem("oxyain_guest_display_name", normalized);
         } catch {
           // Ignore storage errors
         }
       }
     },
-    [fallbackCallsign]
+    [fallbackCallsign],
   );
 
-  const [lastCompletedMatch, setLastCompletedMatch] = useState<MatchState | null>(null);
+  const [lastCompletedMatch, setLastCompletedMatch] =
+    useState<MatchState | null>(null);
 
   const [match, setMatch] = useState<MatchState>(() => {
     const initial = createMatchState({
-      sport: initialResolved.sport || 'racing',
-      subject: 'stem',
-      questionDifficulty: 'easy',
+      sport: initialResolved.sport || "racing",
+      subject: "stem",
+      questionDifficulty: "easy",
       questionCount: 5,
-      matchLength: 'sprint',
-      mode: 'custom',
-      roomCode: initialResolved.roomCode || 'RACE-101',
+      matchLength: "sprint",
+      mode: "custom",
+      roomCode: initialResolved.roomCode || "RACE-101",
       playerName: defaultGuestCallsignRef.current,
       competitorCount: 4,
     });
     return {
       ...initial,
       status:
-        initialResolved.route === 'play'
-          ? 'playing'
-          : initialResolved.route === 'replay'
-          ? 'replay'
-          : 'title',
+        initialResolved.route === "play"
+          ? "playing"
+          : initialResolved.route === "replay"
+            ? "replay"
+            : "title",
     };
   });
 
   // When in Replay Arena view ('replay'), reconstruct the exact step snapshot for the 3D WebGL viewport
   const viewportMatchState =
-    match.status === 'replay' ? reconstructMatchAtReplayStep(match, replayStepIndex) : match;
+    match.status === "replay"
+      ? reconstructMatchAtReplayStep(match, replayStepIndex)
+      : match;
 
   // Mutable ref shared with Three.js 60Hz loop so HUD updates never remount the WebGL canvas
   const matchRef = useRef<MatchState>(viewportMatchState);
@@ -255,16 +274,16 @@ export default function App() {
         sport?: SportDiscipline;
         replace?: boolean;
         skipHistoryPush?: boolean;
-      }
+      },
     ) => {
       if (
-        activeRouteRef.current === 'waiting-room' &&
-        targetRoute !== 'waiting-room' &&
-        targetRoute !== 'play'
+        activeRouteRef.current === "waiting-room" &&
+        targetRoute !== "waiting-room" &&
+        targetRoute !== "play"
       ) {
         const ws = wsRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'room:leave' }));
+          ws.send(JSON.stringify({ type: "room:leave" }));
         }
         setLiveRoomPeers([]);
         setHasLiveRemotePeer(false);
@@ -272,7 +291,7 @@ export default function App() {
       activeRouteRef.current = targetRoute;
       setActiveRoute(targetRoute);
       document.body.dataset.route = targetRoute;
-      if (typeof document !== 'undefined') {
+      if (typeof document !== "undefined") {
         document.title = getRouteDocumentTitle(targetRoute);
       }
 
@@ -283,7 +302,7 @@ export default function App() {
         setRoomCodeInput(options.roomCode.trim().toUpperCase());
       }
 
-      if (!options?.skipHistoryPush && typeof window !== 'undefined') {
+      if (!options?.skipHistoryPush && typeof window !== "undefined") {
         const nextUrl = buildUrlForRoute(targetRoute, {
           roomCode: options?.roomCode,
           sport: options?.sport,
@@ -291,74 +310,86 @@ export default function App() {
         const currentUrl = `${window.location.pathname}${window.location.search}`;
         if (currentUrl !== nextUrl) {
           if (options?.replace) {
-            window.history.replaceState({ route: targetRoute }, '', nextUrl);
+            window.history.replaceState({ route: targetRoute }, "", nextUrl);
           } else {
-            window.history.pushState({ route: targetRoute }, '', nextUrl);
+            window.history.pushState({ route: targetRoute }, "", nextUrl);
           }
         }
       }
 
       switch (targetRoute) {
-        case 'landing':
+        case "landing":
           setShowPublicPortal(true);
           setIsGeneratorOpen(false);
           setIsExtractorOpen(false);
           setIsWaitingRoomOpen(false);
           setIsQueueModalOpen(false);
           setIsCurriculumOpen(false);
-          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          setMatch((prev) =>
+            prev.status === "title" ? prev : { ...prev, status: "title" },
+          );
           break;
-        case 'lobby':
+        case "lobby":
           setShowPublicPortal(false);
           setIsGeneratorOpen(false);
           setIsExtractorOpen(false);
           setIsWaitingRoomOpen(false);
           setIsQueueModalOpen(false);
           setIsCurriculumOpen(false);
-          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          setMatch((prev) =>
+            prev.status === "title" ? prev : { ...prev, status: "title" },
+          );
           break;
-        case 'waiting-room':
+        case "waiting-room":
           setShowPublicPortal(false);
           setIsGeneratorOpen(false);
           setIsExtractorOpen(false);
           setIsQueueModalOpen(false);
           setIsCurriculumOpen(false);
-          setMode('custom');
+          setMode("custom");
           setIsWaitingRoomOpen(true);
-          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          setMatch((prev) =>
+            prev.status === "title" ? prev : { ...prev, status: "title" },
+          );
           break;
-        case 'matchmaking':
+        case "matchmaking":
           setShowPublicPortal(false);
           setIsGeneratorOpen(false);
           setIsExtractorOpen(false);
           setIsWaitingRoomOpen(false);
           setIsCurriculumOpen(false);
-          setMode('quickplay');
+          setMode("quickplay");
           setIsQueueModalOpen(true);
-          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          setMatch((prev) =>
+            prev.status === "title" ? prev : { ...prev, status: "title" },
+          );
           break;
-        case 'generator':
+        case "generator":
           setShowPublicPortal(false);
           setIsExtractorOpen(false);
           setIsWaitingRoomOpen(false);
           setIsQueueModalOpen(false);
           setIsCurriculumOpen(false);
           setIsGeneratorOpen(true);
-          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          setMatch((prev) =>
+            prev.status === "title" ? prev : { ...prev, status: "title" },
+          );
           break;
-        case 'extractor':
+        case "extractor":
           setShowPublicPortal(false);
           setIsGeneratorOpen(false);
           setIsWaitingRoomOpen(false);
           setIsQueueModalOpen(false);
           setIsCurriculumOpen(false);
           setIsExtractorOpen(true);
-          setMatch((prev) => (prev.status === 'title' ? prev : { ...prev, status: 'title' }));
+          setMatch((prev) =>
+            prev.status === "title" ? prev : { ...prev, status: "title" },
+          );
           break;
-        case 'curriculum':
+        case "curriculum":
           setIsCurriculumOpen(true);
           break;
-        case 'play':
+        case "play":
           setShowPublicPortal(false);
           setIsGeneratorOpen(false);
           setIsExtractorOpen(false);
@@ -366,7 +397,7 @@ export default function App() {
           setIsQueueModalOpen(false);
           setIsCurriculumOpen(false);
           break;
-        case 'replay':
+        case "replay":
           setShowPublicPortal(false);
           setIsGeneratorOpen(false);
           setIsExtractorOpen(false);
@@ -376,7 +407,7 @@ export default function App() {
           break;
       }
     },
-    []
+    [],
   );
 
   // Sync document.body.dataset.state, document.title & normalize initial URL if non-canonical
@@ -387,43 +418,52 @@ export default function App() {
   }, [match.status, activeRoute]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const resolved = resolveRouteFromLocation(window.location.pathname, window.location.search);
-    if (resolved.route === 'replay' && (!match.replayEvents || match.replayEvents.length === 0)) {
-      navigateToRoute('lobby', { replace: true });
+    if (typeof window === "undefined") return;
+    const resolved = resolveRouteFromLocation(
+      window.location.pathname,
+      window.location.search,
+    );
+    if (
+      resolved.route === "replay" &&
+      (!match.replayEvents || match.replayEvents.length === 0)
+    ) {
+      navigateToRoute("lobby", { replace: true });
       return;
     }
     const canonical = buildUrlForRoute(resolved.route, {
       roomCode: resolved.roomCode,
       sport: resolved.sport,
     });
-    if (window.location.pathname !== canonical.split('?')[0]) {
-      window.history.replaceState({ route: resolved.route }, '', canonical);
+    if (window.location.pathname !== canonical.split("?")[0]) {
+      window.history.replaceState({ route: resolved.route }, "", canonical);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const onPopState = () => {
-      const resolved = resolveRouteFromLocation(window.location.pathname, window.location.search);
+      const resolved = resolveRouteFromLocation(
+        window.location.pathname,
+        window.location.search,
+      );
       navigateToRoute(resolved.route, {
         roomCode: resolved.roomCode,
         sport: resolved.sport,
         skipHistoryPush: true,
       });
-      if (resolved.route === 'play') {
-        setMatch((prev) => ({ ...prev, status: 'playing' }));
-      } else if (resolved.route === 'replay') {
-        setMatch((prev) => ({ ...prev, status: 'replay' }));
+      if (resolved.route === "play") {
+        setMatch((prev) => ({ ...prev, status: "playing" }));
+      } else if (resolved.route === "replay") {
+        setMatch((prev) => ({ ...prev, status: "replay" }));
       }
     };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, [navigateToRoute]);
 
   // Connect to WebSocket server & listen for room:state, directory:update, room:match_started, and opponent:telemetry
   useEffect(() => {
     let isMounted = true;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
 
     let ws: WebSocket | null = null;
@@ -441,27 +481,42 @@ export default function App() {
         try {
           const msg = JSON.parse(event.data);
 
-          if (msg.type === 'directory:update') {
-            if (typeof msg.activeRoomsCount === 'number') {
+          if (msg.type === "directory:update") {
+            if (typeof msg.activeRoomsCount === "number") {
               setActiveRoomsCount(msg.activeRoomsCount);
             }
             if (Array.isArray(msg.rooms)) {
               setActiveRooms(msg.rooms);
             }
-          } else if (msg.type === 'room:state' && Array.isArray(msg.players)) {
+          } else if (msg.type === "room:state" && Array.isArray(msg.players)) {
             const remotePeers: LiveRoomPeer[] = msg.players.filter(
-              (p: LiveRoomPeer) => p.id !== clientPlayerIdRef.current
+              (p: LiveRoomPeer) => p.id !== clientPlayerIdRef.current,
             );
             const selfEntry = msg.players.find(
-              (p: LiveRoomPeer) => p.id === clientPlayerIdRef.current
+              (p: LiveRoomPeer) => p.id === clientPlayerIdRef.current,
             );
-            if (selfEntry && typeof selfEntry.ready === 'boolean') {
+            if (selfEntry && typeof selfEntry.ready === "boolean") {
               setLocalIsReady(selfEntry.ready);
             }
-            if (selfEntry && typeof selfEntry.isHost === 'boolean') {
+            if (selfEntry && typeof selfEntry.isHost === "boolean") {
               setIsLocalHost(selfEntry.isHost);
-            } else if (typeof msg.hostId === 'string') {
+            } else if (typeof msg.hostId === "string") {
               setIsLocalHost(msg.hostId === clientPlayerIdRef.current);
+            }
+            const amIHost =
+              selfEntry?.isHost ??
+              (typeof msg.hostId === "string"
+                ? msg.hostId === clientPlayerIdRef.current
+                : isLocalHost);
+            if (!amIHost) {
+              if (msg.sport) setSport(msg.sport);
+              if (msg.subject) setSubject(msg.subject);
+              if (msg.questionDifficulty) setQuestionDifficulty(msg.questionDifficulty);
+              if (typeof msg.questionCount === "number") setQuestionCount(msg.questionCount);
+              if (msg.matchLength) setMatchLength(msg.matchLength);
+              if (msg.competitorCount) setCompetitorCount(msg.competitorCount);
+              if (msg.rivalDifficulty) setRivalDifficulty(msg.rivalDifficulty);
+              if (msg.velocityPreset) setVelocityPreset(msg.velocityPreset);
             }
             setLiveRoomPeers(remotePeers);
             setHasLiveRemotePeer(remotePeers.length > 0);
@@ -470,16 +525,19 @@ export default function App() {
             if (remotePeers.length > 0) {
               setMatch((prev) => syncRemotePeersIntoMatch(prev, remotePeers));
             }
-          } else if (msg.type === 'room:match_started' && Array.isArray(msg.players)) {
+          } else if (
+            msg.type === "room:match_started" &&
+            Array.isArray(msg.players)
+          ) {
             const remotePeers: LiveRoomPeer[] = msg.players.filter(
-              (p: LiveRoomPeer) => p.id !== clientPlayerIdRef.current
+              (p: LiveRoomPeer) => p.id !== clientPlayerIdRef.current,
             );
             const selfEntry = msg.players.find(
-              (p: LiveRoomPeer) => p.id === clientPlayerIdRef.current
+              (p: LiveRoomPeer) => p.id === clientPlayerIdRef.current,
             );
-            if (selfEntry && typeof selfEntry.isHost === 'boolean') {
+            if (selfEntry && typeof selfEntry.isHost === "boolean") {
               setIsLocalHost(selfEntry.isHost);
-            } else if (typeof msg.hostId === 'string') {
+            } else if (typeof msg.hostId === "string") {
               setIsLocalHost(msg.hostId === clientPlayerIdRef.current);
             }
             setLiveRoomPeers(remotePeers);
@@ -490,56 +548,70 @@ export default function App() {
               : defaultGuestCallsignRef.current;
 
             const syncedMatch = createMatchState({
-              sport: msg.sport || 'racing',
-              subject: msg.subject || 'stem',
-              questionDifficulty: msg.questionDifficulty || 'easy',
-              questionCount: typeof msg.questionCount === 'number' ? msg.questionCount : 5,
-              matchLength: msg.matchLength || 'sprint',
-              mode: msg.mode || 'custom',
-              roomCode: msg.roomCode || 'RACE-101',
+              sport: msg.sport || "racing",
+              subject: msg.subject || "stem",
+              questionDifficulty: msg.questionDifficulty || "easy",
+              questionCount:
+                typeof msg.questionCount === "number" ? msg.questionCount : 5,
+              matchLength: msg.matchLength || "sprint",
+              mode: msg.mode || "custom",
+              roomCode: msg.roomCode || "RACE-101",
               playerName: resolvedPlayerName,
               competitorCount: msg.competitorCount || 4,
-              rivalDifficulty: msg.rivalDifficulty || 'standard',
-              velocityPreset: msg.velocityPreset || 'standard',
+              rivalDifficulty: msg.rivalDifficulty || "standard",
+              velocityPreset: msg.velocityPreset || "standard",
+              seed:
+                typeof msg.matchSeed === "number"
+                  ? msg.matchSeed
+                  : typeof msg.seed === "number"
+                  ? msg.seed
+                  : undefined,
               remotePeers,
             });
 
-            navigateToRoute('play', {
-              roomCode: msg.roomCode || 'RACE-101',
-              sport: msg.sport || 'racing',
+            navigateToRoute("play", {
+              roomCode: msg.roomCode || "RACE-101",
+              sport: msg.sport || "racing",
             });
-            document.body.dataset.state = 'playing';
+            document.body.dataset.state = "playing";
             setReplayStepIndex(0);
             setMatch(syncedMatch);
-          } else if (msg.type === 'room:match_terminated') {
-            navigateToRoute('lobby', { roomCode: msg.roomCode || roomCodeInput });
-            document.body.dataset.state = 'title';
+          } else if (msg.type === "room:match_terminated") {
+            navigateToRoute("lobby", {
+              roomCode: msg.roomCode || roomCodeInput,
+            });
+            document.body.dataset.state = "title";
             setMatch((prev) => terminateMatchByHost(prev, true));
-          } else if (msg.type === 'room:error') {
-            setRoomError(typeof msg.message === 'string' ? msg.message : 'Unable to join or start this room.');
-          } else if (msg.type === 'queue:status') {
+          } else if (msg.type === "room:error") {
+            setRoomError(
+              typeof msg.message === "string"
+                ? msg.message
+                : "Unable to join or start this room.",
+            );
+          } else if (msg.type === "queue:status") {
             setQueueState((prev) => ({
               ...prev,
-              status: msg.status === 'cancelled' ? 'cancelled' : 'searching',
-              queuePosition: typeof msg.queuePosition === 'number' ? msg.queuePosition : 1,
-              redisChannel: msg.redisChannel || 'mm:1v1:queue',
+              status: msg.status === "cancelled" ? "cancelled" : "searching",
+              queuePosition:
+                typeof msg.queuePosition === "number" ? msg.queuePosition : 1,
+              redisChannel: msg.redisChannel || "mm:1v1:queue",
             }));
-          } else if (msg.type === 'queue:matched') {
+          } else if (msg.type === "queue:matched") {
             setQueueState((prev) =>
               pairQueueOpponent(prev, {
-                roomCode: msg.roomCode || 'QM-101',
-                opponentName: msg.opponentName || 'Marcus Sterling',
-                opponentTitle: msg.opponentTitle || 'Varsity Challenger',
+                roomCode: msg.roomCode || "QM-101",
+                opponentName: msg.opponentName || "Marcus Sterling",
+                opponentTitle: msg.opponentTitle || "Varsity Challenger",
                 opponentRating: msg.opponentRating || 1900,
                 isHumanOpponent: Boolean(msg.isHumanOpponent),
-              })
+              }),
             );
 
             const cfg = lobbyConfigRef.current;
             const resolvedPlayerName = sessionRef.current
               ? sessionRef.current.fullName
               : defaultGuestCallsignRef.current;
-            const pairedRoom = msg.roomCode || 'QM-101';
+            const pairedRoom = msg.roomCode || "QM-101";
 
             window.setTimeout(() => {
               if (!isMounted) return;
@@ -549,44 +621,54 @@ export default function App() {
                 questionDifficulty: cfg.questionDifficulty,
                 questionCount: cfg.questionCount,
                 matchLength: inferMatchLengthFromCount(cfg.questionCount),
-                mode: 'quickplay',
+                mode: "quickplay",
                 roomCode: pairedRoom,
                 playerName: resolvedPlayerName,
-                opponentName: msg.opponentName || 'Marcus Sterling',
+                opponentName: msg.opponentName || "Marcus Sterling",
                 competitorCount: 2,
-                rivalDifficulty: 'standard',
-                velocityPreset: 'standard',
+                rivalDifficulty: "standard",
+                velocityPreset: "standard",
                 customQuestions: cfg.selectedRaceBank
                   ? cfg.selectedRaceBank.questions
                   : undefined,
               });
               setRoomCodeInput(pairedRoom);
-              navigateToRoute('play', { roomCode: pairedRoom, sport: cfg.sport });
-              document.body.dataset.state = 'playing';
+              navigateToRoute("play", {
+                roomCode: pairedRoom,
+                sport: cfg.sport,
+              });
+              document.body.dataset.state = "playing";
               setReplayStepIndex(0);
               setMatch(nextMatch);
             }, 550);
           } else if (
-            msg.type === 'opponent:telemetry' &&
+            msg.type === "opponent:telemetry" &&
             msg.playerId !== clientPlayerIdRef.current
           ) {
             setHasLiveRemotePeer(true);
             const singlePeerUpdate: LiveRoomPeer = {
               id: msg.playerId,
-              name: msg.name || 'Live Contender',
+              name: msg.name || "Live Contender",
               isHost: Boolean(msg.isHost),
-              speedKmh: typeof msg.speedKmh === 'number' ? msg.speedKmh : 100,
-              distanceMeters: typeof msg.distanceMeters === 'number' ? msg.distanceMeters : 0,
-              streak: typeof msg.streak === 'number' ? msg.streak : 0,
-              correctCount: typeof msg.correctCount === 'number' ? msg.correctCount : 0,
-              answeredCount: typeof msg.answeredCount === 'number' ? msg.answeredCount : 0,
+              speedKmh: typeof msg.speedKmh === "number" ? msg.speedKmh : 100,
+              distanceMeters:
+                typeof msg.distanceMeters === "number" ? msg.distanceMeters : 0,
+              streak: typeof msg.streak === "number" ? msg.streak : 0,
+              correctCount:
+                typeof msg.correctCount === "number" ? msg.correctCount : 0,
+              answeredCount:
+                typeof msg.answeredCount === "number" ? msg.answeredCount : 0,
               laneIndex:
-                msg.laneIndex === -1 || msg.laneIndex === 0 || msg.laneIndex === 1
+                msg.laneIndex === -1 ||
+                msg.laneIndex === 0 ||
+                msg.laneIndex === 1
                   ? msg.laneIndex
                   : 1,
               finished: Boolean(msg.finished),
             };
-            setMatch((prev) => syncRemotePeersIntoMatch(prev, [singlePeerUpdate]));
+            setMatch((prev) =>
+              syncRemotePeersIntoMatch(prev, [singlePeerUpdate]),
+            );
           }
         } catch {
           // Ignore non-JSON frame
@@ -600,11 +682,11 @@ export default function App() {
       // Fallback gracefully if WebSocket is blocked
     }
 
-    fetch('/api/rooms')
+    fetch("/api/rooms")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (isMounted && data) {
-          if (typeof data.activeRoomsCount === 'number') {
+          if (typeof data.activeRoomsCount === "number") {
             setActiveRoomsCount(data.activeRoomsCount);
           }
           if (Array.isArray(data.rooms)) {
@@ -614,15 +696,20 @@ export default function App() {
       })
       .catch(() => {});
 
-    fetch('/api/question-banks')
+    fetch("/api/question-banks")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (isMounted && data && Array.isArray(data.banks) && data.banks.length > 0) {
+        if (
+          isMounted &&
+          data &&
+          Array.isArray(data.banks) &&
+          data.banks.length > 0
+        ) {
           setCustomBanks(data.banks);
           setActiveBankId((prev) =>
             data.banks.some((b: CustomQuestionBank) => b.id === prev)
               ? prev
-              : data.banks[0].id
+              : data.banks[0].id,
           );
         }
       })
@@ -636,19 +723,22 @@ export default function App() {
     };
   }, []);
 
-  const handleSaveCustomBank = useCallback((updatedBank: CustomQuestionBank) => {
-    setCustomBanks((prev) => {
-      const exists = prev.some((b) => b.id === updatedBank.id);
-      return exists
-        ? prev.map((b) => (b.id === updatedBank.id ? updatedBank : b))
-        : [...prev, updatedBank];
-    });
-    fetch('/api/question-banks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedBank),
-    }).catch(() => {});
-  }, []);
+  const handleSaveCustomBank = useCallback(
+    (updatedBank: CustomQuestionBank) => {
+      setCustomBanks((prev) => {
+        const exists = prev.some((b) => b.id === updatedBank.id);
+        return exists
+          ? prev.map((b) => (b.id === updatedBank.id ? updatedBank : b))
+          : [...prev, updatedBank];
+      });
+      fetch("/api/question-banks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedBank),
+      }).catch(() => {});
+    },
+    [],
+  );
 
   const handleDeleteCustomBank = useCallback((bankId: string) => {
     setCustomBanks((prev) => {
@@ -659,17 +749,17 @@ export default function App() {
       return filtered;
     });
     fetch(`/api/question-banks/${encodeURIComponent(bankId)}`, {
-      method: 'DELETE',
+      method: "DELETE",
     }).catch(() => {});
   }, []);
 
   // Pre-fetch fresh AI-generated random questions whenever lobby subject/difficulty/count changes or returning to lobby
   useEffect(() => {
-    if (match.status !== 'title') return;
+    if (match.status !== "title") return;
     let cancelled = false;
-    fetch('/api/ai-questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    fetch("/api/ai-questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject,
         difficulty: questionDifficulty,
@@ -683,11 +773,14 @@ export default function App() {
         const fresh: QuestionItem[] = data.questions.filter(
           (q: QuestionItem) =>
             q &&
-            typeof q.prompt === 'string' &&
-            !seenPromptsRef.current.has(q.prompt.trim().toLowerCase())
+            typeof q.prompt === "string" &&
+            !seenPromptsRef.current.has(q.prompt.trim().toLowerCase()),
         );
         if (fresh.length > 0) {
-          aiQuestionPoolRef.current = [...fresh, ...aiQuestionPoolRef.current].slice(0, 120);
+          aiQuestionPoolRef.current = [
+            ...fresh,
+            ...aiQuestionPoolRef.current,
+          ].slice(0, 120);
         }
       })
       .catch(() => {});
@@ -701,16 +794,19 @@ export default function App() {
     const ws = wsRef.current;
     if (!wsConnected || !ws || ws.readyState !== WebSocket.OPEN) return;
     if (!isWaitingRoomOpen) return;
-    if (match.status !== 'title') return;
-    if (mode === 'custom' && !isValidRoomCode(roomCodeInput)) return;
+    if (match.status !== "title") return;
+    if (mode === "custom" && !isValidRoomCode(roomCodeInput)) return;
 
-    const playerName = session ? session.fullName : defaultGuestCallsignRef.current;
+    const playerName = session
+      ? session.fullName
+      : defaultGuestCallsignRef.current;
     const inferredLength = inferMatchLengthFromCount(questionCount);
-    const effectiveCompetitors: CompetitorCount = mode === 'custom' ? competitorCount : 2;
+    const effectiveCompetitors: CompetitorCount =
+      mode === "custom" ? competitorCount : 2;
 
     ws.send(
       JSON.stringify({
-        type: 'lobby:sync',
+        type: "lobby:sync",
         playerId: clientPlayerIdRef.current,
         playerName,
         sport,
@@ -722,8 +818,9 @@ export default function App() {
         competitorCount: effectiveCompetitors,
         rivalDifficulty,
         velocityPreset,
-        roomCode: mode === 'custom' ? roomCodeInput.trim().toUpperCase() : undefined,
-      })
+        roomCode:
+          mode === "custom" ? roomCodeInput.trim().toUpperCase() : undefined,
+      }),
     );
   }, [
     wsConnected,
@@ -744,10 +841,14 @@ export default function App() {
 
   const broadcastPlayerUpdate = useCallback((nextMatch: MatchState) => {
     const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN && nextMatch.status === 'playing') {
+    if (
+      ws &&
+      ws.readyState === WebSocket.OPEN &&
+      nextMatch.status === "playing"
+    ) {
       ws.send(
         JSON.stringify({
-          type: 'player:update',
+          type: "player:update",
           speedKmh: nextMatch.player.speedKmh,
           distanceMeters: nextMatch.player.distanceMeters,
           streak: nextMatch.player.streak,
@@ -755,13 +856,13 @@ export default function App() {
           answeredCount: nextMatch.player.answeredCount,
           laneIndex: nextMatch.player.laneIndex,
           finished: nextMatch.player.finished,
-        })
+        }),
       );
     }
   }, []);
 
   useEffect(() => {
-    if (match.status !== 'playing' || !hasLiveRemotePeer) return;
+    if (match.status !== "playing" || !hasLiveRemotePeer) return;
     broadcastPlayerUpdate(match);
   }, [
     match.status,
@@ -777,9 +878,9 @@ export default function App() {
   ]);
 
   const handleStartMatch = useCallback(() => {
-    if (mode === 'custom' && !isValidRoomCode(roomCodeInput)) {
+    if (mode === "custom" && !isValidRoomCode(roomCodeInput)) {
       setRoomCodeError(
-        'Please enter a valid Room Access Code (e.g., RACE-101 or 6-letter code like OXYAIN).'
+        "Please enter a valid Room Access Code (e.g., RACE-101 or 6-letter code like OXYAIN).",
       );
       return;
     }
@@ -790,7 +891,7 @@ export default function App() {
       mode,
       matchLength: inferredLength,
       questionCount,
-      competitorCount: mode === 'custom' ? competitorCount : 2,
+      competitorCount: mode === "custom" ? competitorCount : 2,
       rivalDifficulty,
       velocityPreset,
     });
@@ -806,28 +907,35 @@ export default function App() {
     }
 
     const activeCode =
-      mode === 'custom' ? roomCodeInput.trim().toUpperCase() : generateRoomCode();
-    if (mode === 'quickplay') {
+      mode === "custom"
+        ? roomCodeInput.trim().toUpperCase()
+        : generateRoomCode();
+    if (mode === "quickplay") {
       setRoomCodeInput(activeCode);
     }
 
-    const playerName = session ? session.fullName : defaultGuestCallsignRef.current;
-    const effectiveCompetitors: CompetitorCount = mode === 'custom' ? competitorCount : 2;
+    const playerName = session
+      ? session.fullName
+      : defaultGuestCallsignRef.current;
+    const effectiveCompetitors: CompetitorCount =
+      mode === "custom" ? competitorCount : 2;
 
     if (isWaitingRoomOpen) {
       const ws = wsRef.current;
       if (!isLocalHost) {
-        setRoomError('Only the host can start this match.');
+        setRoomError("Only the host can start this match.");
         return;
       }
       if (!ws || ws.readyState !== WebSocket.OPEN) {
-        setRoomError('The room connection is unavailable. Reconnect before starting.');
+        setRoomError(
+          "The room connection is unavailable. Reconnect before starting.",
+        );
         return;
       }
       setRoomError(null);
       ws.send(
         JSON.stringify({
-          type: 'room:launch',
+          type: "room:launch",
           roomCode: roomCodeInput.trim().toUpperCase(),
           sport,
           subject,
@@ -837,7 +945,7 @@ export default function App() {
           competitorCount: effectiveCompetitors,
           rivalDifficulty,
           velocityPreset,
-        })
+        }),
       );
       return;
     }
@@ -851,8 +959,9 @@ export default function App() {
       const matchingAi = aiQuestionPoolRef.current.filter(
         (q) =>
           !seenPromptsRef.current.has(q.prompt.trim().toLowerCase()) &&
-          (subject === 'all' || q.subject === subject) &&
-          (questionDifficulty === 'all' || q.difficultyTier === questionDifficulty)
+          (subject === "all" || q.subject === subject) &&
+          (questionDifficulty === "all" ||
+            q.difficultyTier === questionDifficulty),
       );
       if (matchingAi.length > 0) {
         initialCustomQuestions = matchingAi.slice(0, questionCount);
@@ -880,14 +989,13 @@ export default function App() {
       seenPromptsRef.current.add(q.prompt.trim().toLowerCase());
     }
     aiQuestionPoolRef.current = aiQuestionPoolRef.current.filter(
-      (q) => !seenPromptsRef.current.has(q.prompt.trim().toLowerCase())
+      (q) => !seenPromptsRef.current.has(q.prompt.trim().toLowerCase()),
     );
 
-    navigateToRoute('play', { roomCode: activeCode, sport });
-    document.body.dataset.state = 'playing';
+    navigateToRoute("play", { roomCode: activeCode, sport });
+    document.body.dataset.state = "playing";
     setReplayStepIndex(0);
     setMatch(nextMatch);
-
   }, [
     mode,
     roomCodeInput,
@@ -911,18 +1019,21 @@ export default function App() {
       const bankQCount = Math.max(1, bank.questions.length);
       const inferredLen = inferMatchLengthFromCount(bankQCount);
       const activeCode =
-        mode === 'custom' && isValidRoomCode(roomCodeInput)
+        mode === "custom" && isValidRoomCode(roomCodeInput)
           ? roomCodeInput.trim().toUpperCase()
-          : 'RACE-101';
-      const playerName = session ? session.fullName : defaultGuestCallsignRef.current;
-      const effectiveCompetitors: CompetitorCount = mode === 'custom' ? competitorCount : 2;
+          : "RACE-101";
+      const playerName = session
+        ? session.fullName
+        : defaultGuestCallsignRef.current;
+      const effectiveCompetitors: CompetitorCount =
+        mode === "custom" ? competitorCount : 2;
 
       setSelectedRaceBank(bank);
       setSubject(bank.subject);
       setQuestionDifficulty(bank.difficultyTier);
       setQuestionCount(bankQCount);
       setMatchLength(inferredLen);
-      navigateToRoute('play', { roomCode: activeCode, sport });
+      navigateToRoute("play", { roomCode: activeCode, sport });
 
       const nextMatch = createMatchState({
         sport,
@@ -940,7 +1051,7 @@ export default function App() {
         customQuestions: bank.questions,
       });
 
-      document.body.dataset.state = 'playing';
+      document.body.dataset.state = "playing";
       setReplayStepIndex(0);
       setMatch(nextMatch);
     },
@@ -954,13 +1065,13 @@ export default function App() {
       velocityPreset,
       liveRoomPeers,
       navigateToRoute,
-    ]
+    ],
   );
 
   const handleSelectAnswer = useCallback(
     (optionIndex: number) => {
       setMatch((prev) => {
-        if (prev.status !== 'playing') return prev;
+        if (prev.status !== "playing") return prev;
         const next = submitMatchAnswer(prev, optionIndex);
         if (next.lastFeedback?.isCorrect) {
           soundFX.playCorrectBoost(next.player.streak);
@@ -969,31 +1080,28 @@ export default function App() {
         }
         broadcastPlayerUpdate(next);
 
-        if (next.status === 'gameover') {
-          if (next.winner === 'player') {
+        if (next.status === "gameover") {
+          if (next.winner === "player") {
             soundFX.playVictoryFanfare();
           }
           const completed = completeMatchAndReturnToLobby(next);
           setLastCompletedMatch(completed.completedMatchSnapshot);
-          window.setTimeout(() => {
-            navigateToRoute(completed.targetRoute, {
-              roomCode: next.roomCode,
-              sport: next.sport,
-            });
-          }, 0);
-          return completed.lobbyMatchState;
+          return next;
         }
         return next;
       });
     },
-    [broadcastPlayerUpdate, navigateToRoute]
+    [broadcastPlayerUpdate, navigateToRoute],
   );
 
   const handleShiftLane = useCallback(
     (delta: -1 | 1) => {
       setMatch((prev) => {
-        if (prev.status !== 'playing') return prev;
-        const nextLane = Math.max(-1, Math.min(1, prev.player.laneIndex + delta)) as -1 | 0 | 1;
+        if (prev.status !== "playing") return prev;
+        const nextLane = Math.max(
+          -1,
+          Math.min(1, prev.player.laneIndex + delta),
+        ) as -1 | 0 | 1;
         if (nextLane !== prev.player.laneIndex) {
           soundFX.playLaneShift();
         }
@@ -1002,12 +1110,12 @@ export default function App() {
         return next;
       });
     },
-    [broadcastPlayerUpdate]
+    [broadcastPlayerUpdate],
   );
 
   const handleLaunchReplayArena = useCallback(() => {
     setReplayStepIndex(0);
-    navigateToRoute('replay');
+    navigateToRoute("replay");
     setMatch((prev) => {
       const sourceMatch =
         lastCompletedMatch &&
@@ -1017,40 +1125,40 @@ export default function App() {
           : prev;
       return {
         ...sourceMatch,
-        status: 'replay',
+        status: "replay",
       };
     });
   }, [navigateToRoute, lastCompletedMatch]);
 
   const handleExitAndFlushReplay = useCallback(() => {
     setReplayStepIndex(0);
-    navigateToRoute('lobby', { roomCode: match.roomCode, sport: match.sport });
+    navigateToRoute("lobby", { roomCode: match.roomCode, sport: match.sport });
     setLastCompletedMatch((prev) => (prev ? flushReplayMemory(prev) : null));
     setMatch((prev) => ({
       ...flushReplayMemory(prev),
-      status: 'title',
+      status: "title",
     }));
   }, [navigateToRoute, match.roomCode, match.sport]);
 
   const handleQuitGameByHost = useCallback(() => {
     if (!isLocalHost) return;
-    navigateToRoute('lobby', { roomCode: match.roomCode });
-    document.body.dataset.state = 'title';
+    navigateToRoute("lobby", { roomCode: match.roomCode });
+    document.body.dataset.state = "title";
     setMatch((prev) => terminateMatchByHost(prev, isLocalHost));
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(
         JSON.stringify({
-          type: 'room:terminate',
+          type: "room:terminate",
           roomCode: match.roomCode,
-        })
+        }),
       );
     }
   }, [isLocalHost, match.roomCode, navigateToRoute]);
 
   // 1v1 Matchmaking Queue timer & handlers
   useEffect(() => {
-    if (!isQueueModalOpen || queueState.status !== 'searching') return;
+    if (!isQueueModalOpen || queueState.status !== "searching") return;
     const interval = window.setInterval(() => {
       setQueueState((prev) => stepQueueTimer(prev, 0.1));
     }, 100);
@@ -1060,12 +1168,12 @@ export default function App() {
   const handleOpenQuickMatchQueue = useCallback(() => {
     const inferredLength = inferMatchLengthFromCount(questionCount);
     const accessCheck = evaluateLobbyAccess(session, {
-      mode: 'quickplay',
+      mode: "quickplay",
       matchLength: inferredLength,
       questionCount,
       competitorCount: 2,
-      rivalDifficulty: 'standard',
-      velocityPreset: 'standard',
+      rivalDifficulty: "standard",
+      velocityPreset: "standard",
     });
 
     if (!accessCheck.allowed) {
@@ -1073,16 +1181,18 @@ export default function App() {
       return;
     }
     setProGateNotice(null);
-    setMode('quickplay');
+    setMode("quickplay");
     setQueueState(createInitialQueueState());
-    navigateToRoute('matchmaking');
+    navigateToRoute("matchmaking");
 
     const ws = wsRef.current;
-    const playerName = session ? session.fullName : defaultGuestCallsignRef.current;
+    const playerName = session
+      ? session.fullName
+      : defaultGuestCallsignRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(
         JSON.stringify({
-          type: 'queue:join',
+          type: "queue:join",
           playerId: clientPlayerIdRef.current,
           playerName,
           sport,
@@ -1090,20 +1200,27 @@ export default function App() {
           questionDifficulty,
           questionCount,
           matchLength: inferredLength,
-        })
+        }),
       );
     }
-  }, [questionCount, session, sport, subject, questionDifficulty, navigateToRoute]);
+  }, [
+    questionCount,
+    session,
+    sport,
+    subject,
+    questionDifficulty,
+    navigateToRoute,
+  ]);
 
   const handleForcePairNow = useCallback(() => {
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(
         JSON.stringify({
-          type: 'queue:force_pair',
+          type: "queue:force_pair",
           playerId: clientPlayerIdRef.current,
           sport,
-        })
+        }),
       );
     } else {
       handleStartMatch();
@@ -1115,18 +1232,18 @@ export default function App() {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(
         JSON.stringify({
-          type: 'queue:leave',
+          type: "queue:leave",
           playerId: clientPlayerIdRef.current,
-        })
+        }),
       );
     }
-    navigateToRoute('lobby');
+    navigateToRoute("lobby");
   }, [navigateToRoute]);
 
   const handleOpenWaitingRoom = useCallback(() => {
     if (!isValidRoomCode(roomCodeInput)) {
       setRoomCodeError(
-        'Please enter a valid Room Access Code (e.g., RACE-101 or 6-letter code like OXYAIN).'
+        "Please enter a valid Room Access Code (e.g., RACE-101 or 6-letter code like OXYAIN).",
       );
       return;
     }
@@ -1134,7 +1251,7 @@ export default function App() {
 
     const inferredLength = inferMatchLengthFromCount(questionCount);
     const accessCheck = evaluateLobbyAccess(session, {
-      mode: 'custom',
+      mode: "custom",
       matchLength: inferredLength,
       questionCount,
       competitorCount,
@@ -1150,9 +1267,12 @@ export default function App() {
     setRoomError(null);
     setLiveRoomPeers([]);
     setHasLiveRemotePeer(false);
-    setMode('custom');
+    setMode("custom");
     setLocalIsReady(true);
-    navigateToRoute('waiting-room', { roomCode: roomCodeInput.trim().toUpperCase() });
+    setIsLocalHost(true);
+    navigateToRoute("waiting-room", {
+      roomCode: roomCodeInput.trim().toUpperCase(),
+    });
   }, [
     roomCodeInput,
     questionCount,
@@ -1164,7 +1284,7 @@ export default function App() {
   ]);
 
   const handleLeaveWaitingRoom = useCallback(() => {
-    navigateToRoute('lobby', { roomCode: roomCodeInput });
+    navigateToRoute("lobby", { roomCode: roomCodeInput });
   }, [navigateToRoute, roomCodeInput]);
 
   const handleToggleWaitingRoomReady = useCallback(() => {
@@ -1174,9 +1294,9 @@ export default function App() {
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(
           JSON.stringify({
-            type: 'room:ready',
+            type: "room:ready",
             ready: next,
-          })
+          }),
         );
       }
       return next;
@@ -1185,7 +1305,7 @@ export default function App() {
 
   // Simulation step interval (10Hz state reconciliation for HUD numbers while Three.js interpolates smoothly at 60Hz)
   useEffect(() => {
-    if (match.status !== 'playing') return;
+    if (match.status !== "playing") return;
     let lastTime = performance.now();
 
     const interval = window.setInterval(() => {
@@ -1194,21 +1314,15 @@ export default function App() {
       lastTime = now;
 
       setMatch((prev) => {
-        if (prev.status !== 'playing') return prev;
+        if (prev.status !== "playing") return prev;
         const next = stepMatchSimulation(prev, dt, !hasLiveRemotePeer);
-        if (next.status === 'gameover' && prev.status === 'playing') {
-          if (next.winner === 'player') {
+        if (next.status === "gameover" && prev.status === "playing") {
+          if (next.winner === "player") {
             soundFX.playVictoryFanfare();
           }
           const completed = completeMatchAndReturnToLobby(next);
           setLastCompletedMatch(completed.completedMatchSnapshot);
-          window.setTimeout(() => {
-            navigateToRoute(completed.targetRoute, {
-              roomCode: next.roomCode,
-              sport: next.sport,
-            });
-          }, 0);
-          return completed.lobbyMatchState;
+          return next;
         }
         return next;
       });
@@ -1221,32 +1335,32 @@ export default function App() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isCurriculumOpen) {
-        if (e.key === 'Escape') {
+        if (e.key === "Escape") {
           setIsCurriculumOpen(false);
-          if (activeRoute === 'curriculum') {
-            navigateToRoute(showPublicPortal ? 'landing' : 'lobby');
+          if (activeRoute === "curriculum") {
+            navigateToRoute(showPublicPortal ? "landing" : "lobby");
           }
         }
         return;
       }
       if (authModalState.isOpen) {
-        if (e.key === 'Escape') {
+        if (e.key === "Escape") {
           setAuthModalState((prev) => ({ ...prev, isOpen: false }));
         }
         return;
       }
 
       const activeTag = document.activeElement?.tagName.toLowerCase();
-      if (activeTag === 'input' || activeTag === 'textarea') return;
+      if (activeTag === "input" || activeTag === "textarea") return;
 
       const currentStatus = match.status;
 
-      if (currentStatus === 'title' && !showPublicPortal) {
-        if (e.key === 'Enter' || e.key === ' ') {
+      if (currentStatus === "title" && !showPublicPortal) {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          if (mode === 'custom' && !isWaitingRoomOpen) {
+          if (mode === "custom" && !isWaitingRoomOpen) {
             handleOpenWaitingRoom();
-          } else if (mode === 'custom' && isWaitingRoomOpen) {
+          } else if (mode === "custom" && isWaitingRoomOpen) {
             if (liveRoomPeers.length >= 1 && localIsReady) {
               handleStartMatch();
             }
@@ -1257,58 +1371,64 @@ export default function App() {
         return;
       }
 
-      if (currentStatus === 'playing') {
-        if (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4') {
+      if (currentStatus === "playing") {
+        if (e.key === "1" || e.key === "2" || e.key === "3" || e.key === "4") {
           e.preventDefault();
           handleSelectAnswer(Number(e.key) - 1);
-        } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        } else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
           e.preventDefault();
           handleShiftLane(-1);
-        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
           e.preventDefault();
           handleShiftLane(1);
-        } else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        } else if (e.key === "p" || e.key === "P" || e.key === "Escape") {
           e.preventDefault();
-          setMatch((prev) => ({ ...prev, status: 'paused' }));
-        } else if (e.key === 'm' || e.key === 'M') {
+          setMatch((prev) => ({ ...prev, status: "paused" }));
+        } else if (e.key === "m" || e.key === "M") {
           e.preventDefault();
           setMuted((prev) => {
             const next = !prev;
             soundFX.muted = next;
             return next;
           });
-        } else if (e.key === 'r' || e.key === 'R') {
+        } else if (e.key === "r" || e.key === "R") {
           e.preventDefault();
           handleStartMatch();
         }
-      } else if (currentStatus === 'paused') {
-        if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+      } else if (currentStatus === "paused") {
+        if (e.key === "p" || e.key === "P" || e.key === "Escape") {
           e.preventDefault();
-          setMatch((prev) => ({ ...prev, status: 'playing' }));
+          setMatch((prev) => ({ ...prev, status: "playing" }));
         }
-      } else if (currentStatus === 'replay') {
-        if (e.key === 'ArrowRight') {
+      } else if (currentStatus === "replay") {
+        if (e.key === "ArrowRight") {
           e.preventDefault();
           setReplayStepIndex((prev) =>
-            Math.min((match.replayEvents?.length || 1) - 1, prev + 1)
+            Math.min((match.replayEvents?.length || 1) - 1, prev + 1),
           );
-        } else if (e.key === 'ArrowLeft') {
+        } else if (e.key === "ArrowLeft") {
           e.preventDefault();
           setReplayStepIndex((prev) => Math.max(0, prev - 1));
-        } else if (e.key === 'Escape') {
+        } else if (e.key === "Escape") {
           e.preventDefault();
           handleExitAndFlushReplay();
         }
-      } else if (currentStatus === 'gameover') {
-        if (e.key === 'Enter' || e.key === ' ') {
+      } else if (currentStatus === "gameover") {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           handleStartMatch();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          const completed = completeMatchAndReturnToLobby(match);
+          setLastCompletedMatch(completed.completedMatchSnapshot);
+          navigateToRoute("lobby", { roomCode: match.roomCode, sport: match.sport });
+          setMatch(completed.lobbyMatchState);
         }
       }
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [
     isCurriculumOpen,
     authModalState.isOpen,
@@ -1333,16 +1453,16 @@ export default function App() {
         <ThreeRaceViewport
           matchRef={matchRef}
           previewSport={sport}
-          previewCompetitorCount={mode === 'custom' ? competitorCount : 2}
-          isTitleScreen={match.status === 'title'}
+          previewCompetitorCount={mode === "custom" ? competitorCount : 2}
+          isTitleScreen={match.status === "title"}
         />
       </Suspense>
 
       {/* [SCR-01] Universal Landing Page & Public Marketing Terminal (Root '/') */}
-      {match.status === 'title' && showPublicPortal && (
+      {match.status === "title" && showPublicPortal && (
         <Scr01LandingPortal
           session={session}
-          onOpenAuth={(authMode, tier = 'classroom', role = 'educator') =>
+          onOpenAuth={(authMode, tier = "classroom", role = "educator") =>
             setAuthModalState({
               isOpen: true,
               mode: authMode,
@@ -1351,21 +1471,21 @@ export default function App() {
             })
           }
           onEnterArena={(selectedSport) => {
-            navigateToRoute('lobby', { sport: selectedSport });
+            navigateToRoute("lobby", { sport: selectedSport });
           }}
           onOpenCustomLobby={() => {
-            setMode('custom');
-            setRoomCodeInput('RACE-101');
-            navigateToRoute('lobby', { roomCode: 'RACE-101' });
+            setMode("custom");
+            setRoomCodeInput("RACE-101");
+            navigateToRoute("lobby", { roomCode: "RACE-101" });
           }}
-          onOpenCurriculum={() => navigateToRoute('curriculum')}
+          onOpenCurriculum={() => navigateToRoute("curriculum")}
           wsConnected={wsConnected}
           activeRoomsCount={activeRoomsCount}
         />
       )}
 
       {/* 3D Tournament Lobby & Custom Multi-Competitor Room Configurator ('/lobby') */}
-      {match.status === 'title' &&
+      {match.status === "title" &&
         !showPublicPortal &&
         !isGeneratorOpen &&
         !isExtractorOpen && (
@@ -1398,6 +1518,7 @@ export default function App() {
             setRoomCodeInput={setRoomCodeInput}
             roomCodeError={roomCodeError}
             setRoomCodeError={setRoomCodeError}
+            roomError={roomError}
             proGateNotice={proGateNotice}
             setProGateNotice={setProGateNotice}
             onStartMatch={handleStartMatch}
@@ -1405,16 +1526,16 @@ export default function App() {
               const nextCode = generateRoomCode(undefined, sport);
               setRoomCodeInput(nextCode);
               setRoomCodeError(null);
-              navigateToRoute('lobby', { roomCode: nextCode, replace: true });
+              navigateToRoute("lobby", { roomCode: nextCode, replace: true });
             }}
-            onOpenCurriculum={() => navigateToRoute('curriculum')}
-            onOpenPublicPortal={() => navigateToRoute('landing')}
+            onOpenCurriculum={() => navigateToRoute("curriculum")}
+            onOpenPublicPortal={() => navigateToRoute("landing")}
             onOpenLoginForPro={() =>
               setAuthModalState({
                 isOpen: true,
-                mode: 'signup',
-                tier: 'classroom',
-                role: 'educator',
+                mode: "signup",
+                tier: "classroom",
+                role: "educator",
               })
             }
             session={session}
@@ -1422,11 +1543,13 @@ export default function App() {
             activeRoomsCount={activeRoomsCount}
             liveRoomPeers={liveRoomPeers}
             activeRooms={activeRooms}
-            onOpenQuestionGenerator={() => navigateToRoute('generator')}
-            onOpenSourceExtractor={() => navigateToRoute('extractor')}
+            onOpenQuestionGenerator={() => navigateToRoute("generator")}
+            onOpenSourceExtractor={() => navigateToRoute("extractor")}
             onOpenQuickMatchQueue={handleOpenQuickMatchQueue}
             onOpenWaitingRoom={handleOpenWaitingRoom}
-            activeCustomBankTitle={selectedRaceBank ? selectedRaceBank.title : null}
+            activeCustomBankTitle={
+              selectedRaceBank ? selectedRaceBank.title : null
+            }
             onClearCustomBank={() => setSelectedRaceBank(null)}
             guestDisplayName={guestDisplayName}
             onChangeGuestDisplayName={handleUpdateGuestDisplayName}
@@ -1483,24 +1606,24 @@ export default function App() {
         onSelectBank={(id) => setActiveBankId(id)}
         onSaveBank={handleSaveCustomBank}
         onDeleteBank={handleDeleteCustomBank}
-        onCloseToLobby={() => navigateToRoute('lobby')}
+        onCloseToLobby={() => navigateToRoute("lobby")}
         onLaunchRaceWithBank={handleLaunchRaceWithCustomBank}
-        onOpenSourceExtractor={() => navigateToRoute('extractor')}
+        onOpenSourceExtractor={() => navigateToRoute("extractor")}
         onOpenAuthModal={() =>
           setAuthModalState({
             isOpen: true,
-            mode: 'signup',
-            tier: 'classroom',
-            role: 'educator',
+            mode: "signup",
+            tier: "classroom",
+            role: "educator",
           })
         }
         onQuickUnlockDemoPro={() =>
           setSession({
-            id: 'pro-demo-elena',
-            email: 'elena.vance@academy.edu',
-            fullName: 'Dr. Elena Vance',
-            role: 'educator',
-            tier: 'classroom',
+            id: "pro-demo-elena",
+            email: "elena.vance@academy.edu",
+            fullName: "Dr. Elena Vance",
+            role: "educator",
+            tier: "classroom",
           })
         }
       />
@@ -1517,31 +1640,33 @@ export default function App() {
           onOpenInQuestionGenerator={(bank) => {
             handleSaveCustomBank(bank);
             setActiveBankId(bank.id);
-            navigateToRoute('generator');
+            navigateToRoute("generator");
           }}
-          onBackToLobby={() => navigateToRoute('lobby')}
+          onBackToLobby={() => navigateToRoute("lobby")}
           onOpenAuthForPro={() =>
             setAuthModalState({
               isOpen: true,
-              mode: 'signup',
-              tier: 'classroom',
-              role: 'educator',
+              mode: "signup",
+              tier: "classroom",
+              role: "educator",
             })
           }
           onQuickDemoProLogin={() =>
             setSession({
-              id: 'pro-demo-elena',
-              email: 'elena.vance@academy.edu',
-              fullName: 'Dr. Elena Vance',
-              role: 'educator',
-              tier: 'classroom',
+              id: "pro-demo-elena",
+              email: "elena.vance@academy.edu",
+              fullName: "Dr. Elena Vance",
+              role: "educator",
+              tier: "classroom",
             })
           }
         />
       )}
 
       {/* Active Gameplay HUD & Split-Screen Academic Quiz Deck ('/play') */}
-      {(match.status === 'playing' || match.status === 'paused' || match.status === 'gameover') && (
+      {(match.status === "playing" ||
+        match.status === "paused" ||
+        match.status === "gameover") && (
         <PlayingHudAndQuizDeck
           match={match}
           muted={muted}
@@ -1557,7 +1682,7 @@ export default function App() {
             e.currentTarget.blur();
             setMatch((prev) => ({
               ...prev,
-              status: prev.status === 'paused' ? 'playing' : 'paused',
+              status: prev.status === "paused" ? "playing" : "paused",
             }));
           }}
           onRestart={(e) => {
@@ -1575,11 +1700,13 @@ export default function App() {
       {/* Pause / Victory / Game Over Status Modal */}
       <StatusModalCard
         match={match}
-        onResume={() => setMatch((prev) => ({ ...prev, status: 'playing' }))}
+        onResume={() => setMatch((prev) => ({ ...prev, status: "playing" }))}
         onRestart={handleStartMatch}
         onReturnToTitle={() => {
-          navigateToRoute('lobby', { roomCode: match.roomCode });
-          setMatch((prev) => ({ ...prev, status: 'title' }));
+          const completed = completeMatchAndReturnToLobby(match);
+          setLastCompletedMatch(completed.completedMatchSnapshot);
+          navigateToRoute("lobby", { roomCode: match.roomCode, sport: match.sport });
+          setMatch(completed.lobbyMatchState);
         }}
         onQuitGame={handleQuitGameByHost}
         isHost={isLocalHost}
@@ -1600,15 +1727,17 @@ export default function App() {
         initialMode={authModalState.mode}
         initialTier={authModalState.tier}
         initialRole={authModalState.role}
-        onClose={() => setAuthModalState((prev) => ({ ...prev, isOpen: false }))}
+        onClose={() =>
+          setAuthModalState((prev) => ({ ...prev, isOpen: false }))
+        }
         onAuthenticated={(newSession) => {
           setSession(newSession);
           setAuthModalState((prev) => ({ ...prev, isOpen: false }));
           setProGateNotice(null);
-          setMode('custom');
+          setMode("custom");
           setCompetitorCount(8);
-          if (activeRoute === 'landing') {
-            navigateToRoute('lobby');
+          if (activeRoute === "landing") {
+            navigateToRoute("lobby");
           }
         }}
       />
@@ -1618,8 +1747,8 @@ export default function App() {
         isOpen={isCurriculumOpen}
         onClose={() => {
           setIsCurriculumOpen(false);
-          if (activeRoute === 'curriculum') {
-            navigateToRoute(showPublicPortal ? 'landing' : 'lobby');
+          if (activeRoute === "curriculum") {
+            navigateToRoute(showPublicPortal ? "landing" : "lobby");
           }
         }}
       />
