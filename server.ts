@@ -5,7 +5,7 @@ import path from 'path';
 import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
-import { createServer as createViteServer } from 'vite';
+import next from 'next';
 import { GoogleGenAI, Type } from '@google/genai';
 import mammoth from 'mammoth';
 import { extractText as extractPdfText } from 'unpdf';
@@ -1609,23 +1609,15 @@ ${workerMetrics.cleanedText.slice(0, 10000)}`;
     });
   });
 
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath, { maxAge: '1h', etag: true }));
-    app.use((req, res, next) => {
-      if (req.method !== 'GET' || req.path.startsWith('/api/')) {
-        next();
-        return;
-      }
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
+  const isDev = process.env.NODE_ENV !== 'production';
+  const nextApp = next({ dev: isDev, dir: __dirname });
+  await nextApp.prepare();
+  const nextHandler = nextApp.getRequestHandler();
+  console.log(`[Oxyain] Next.js ${isDev ? 'development' : 'production'} engine mounted successfully.`);
+
+  app.all('*', (req, res) => {
+    return nextHandler(req, res);
+  });
 
   const PORT = Number(process.env.PORT) || 3000;
   server.listen(PORT, '0.0.0.0', () => {

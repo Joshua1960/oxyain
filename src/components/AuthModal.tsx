@@ -82,16 +82,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       aria-labelledby="auth-modal-heading"
       data-testid="auth-modal"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 pointer-events-auto cursor-pointer"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md pointer-events-auto cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-[#0B1120] border border-slate-700 rounded-xl shadow-2xl overflow-hidden cursor-default"
+        className="w-full max-w-md bg-[#0D1527]/98 border border-white/[0.12] rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden cursor-default"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
           <div>
-            <div className="text-xs font-mono text-cyan-400">
+            <div className="text-xs font-mono text-cyan-400 font-semibold uppercase tracking-wider">
               ACCOUNT ACCESS
             </div>
             <h2 id="auth-modal-heading" className="text-xl font-bold text-white font-display">
@@ -104,7 +104,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             type="button"
             data-testid="auth-close-btn"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 cursor-pointer"
+            className="h-9 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-slate-300 border border-white/[0.08] transition-all cursor-pointer"
           >
             Close
           </button>
@@ -113,7 +113,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Mode Segmented Control */}
         <div className="px-6 pt-5">
           <div
-            className="grid grid-cols-2 gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800"
+            className="grid grid-cols-2 gap-1 p-1 bg-[#070B14] rounded-xl border border-white/[0.08]"
             role="group"
             aria-label="Authentication Mode"
           >
@@ -123,10 +123,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setMode('signup');
                 setError(null);
               }}
-              className={`py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap cursor-pointer ${
+              className={`py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                 mode === 'signup'
-                  ? 'bg-cyan-500 text-slate-950'
-                  : 'text-slate-300 hover:text-white'
+                  ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Create Account
@@ -137,10 +137,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setMode('signin');
                 setError(null);
               }}
-              className={`py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap cursor-pointer ${
+              className={`py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                 mode === 'signin'
-                  ? 'bg-cyan-500 text-slate-950'
-                  : 'text-slate-300 hover:text-white'
+                  ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Sign In
@@ -150,7 +150,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4" noValidate>
           {/* Selected Subscription Plan Summary */}
-          <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs">
             <div>
               <span className="text-slate-400">Plan: </span>
               <span className="font-semibold text-white">{activeTierObj.name}</span>
@@ -162,7 +162,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           {mode === 'signup' && (
             <div>
-              <label htmlFor="auth-fullname" className="block text-xs font-medium text-slate-300 mb-1">
+              <label htmlFor="auth-fullname" className="block text-xs font-medium text-slate-300 mb-1.5">
                 Full Name
               </label>
               <input
@@ -171,13 +171,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Alex Morgan"
-                className="w-full px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400"
+                className="w-full h-11 px-4 rounded-xl bg-[#070B14] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
               />
             </div>
           )}
 
           <div>
-            <label htmlFor="auth-email" className="block text-xs font-medium text-slate-300 mb-1">
+            <label htmlFor="auth-email" className="block text-xs font-medium text-slate-300 mb-1.5">
               Email Address
             </label>
             <input
@@ -186,12 +186,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
-              className="w-full px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400"
+              className="w-full h-11 px-4 rounded-xl bg-[#070B14] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
 
           <div>
-            <label htmlFor="auth-password" className="block text-xs font-medium text-slate-300 mb-1">
+            <label htmlFor="auth-password" className="block text-xs font-medium text-slate-300 mb-1.5">
               Password
             </label>
             <input
@@ -200,7 +200,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400"
+              className="w-full h-11 px-4 rounded-xl bg-[#070B14] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
 
@@ -214,14 +214,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 cursor-pointer"
+              className="h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-slate-300 border border-white/[0.08] transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               data-testid="auth-submit-btn"
-              className="px-6 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display tracking-wide transition-colors whitespace-nowrap cursor-pointer"
+              className="h-11 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display tracking-wider transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98] whitespace-nowrap cursor-pointer"
             >
               {mode === 'signup'
                 ? 'Create Account & Enter'

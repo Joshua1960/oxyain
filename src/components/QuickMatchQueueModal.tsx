@@ -68,16 +68,16 @@ export const QuickMatchQueueModal: React.FC<QuickMatchQueueModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl rounded-2xl bg-[#0F172A]/95 border border-cyan-500/35 shadow-[0_24px_70px_rgba(0,0,0,0.85)] overflow-hidden text-[#F8FAFC]"
+        className="w-full max-w-2xl rounded-2xl bg-[#0D1527]/98 border border-white/[0.12] shadow-2xl backdrop-blur-2xl overflow-hidden text-[#F8FAFC]"
       >
         {/* Top Bar */}
-        <div className="px-6 py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 bg-[#070B14]/80 border-b border-white/[0.08] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/15 border border-cyan-400/35 text-cyan-300 text-[11px] font-mono font-bold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-[11px] font-mono font-bold uppercase tracking-wider">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
               1v1 Matchmaking Queue
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/90 border border-slate-700 text-slate-300 text-[11px] font-mono">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/[0.05] border border-white/[0.08] text-slate-300 text-[11px] font-mono">
               <Wifi className={`w-3 h-3 ${wsConnected ? 'text-emerald-400' : 'text-amber-400'}`} />
               {wsConnected ? 'Redis Matchmaker · Live WS' : 'Matchmaker Active'}
             </span>
@@ -86,7 +86,7 @@ export const QuickMatchQueueModal: React.FC<QuickMatchQueueModalProps> = ({
             type="button"
             onClick={onCancelQueue}
             aria-label="Cancel matchmaking queue"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-colors cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -227,12 +227,12 @@ export const QuickMatchQueueModal: React.FC<QuickMatchQueueModalProps> = ({
           </div>
 
           {/* Action Footer */}
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800/80">
+          <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/[0.08]">
             <button
               type="button"
               data-testid="matchmaking-cancel-btn"
               onClick={onCancelQueue}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
+              className="w-full sm:w-auto h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 text-xs font-semibold border border-white/[0.08] transition-all cursor-pointer"
             >
               Cancel Queue
             </button>
@@ -241,7 +241,7 @@ export const QuickMatchQueueModal: React.FC<QuickMatchQueueModalProps> = ({
               type="button"
               data-testid="matchmaking-pair-now-btn"
               onClick={onForcePairNow}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-display font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
+              className="w-full sm:w-auto h-11 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-display font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20 transition-all active:scale-[0.98] cursor-pointer"
             >
               <Zap className="w-4 h-4" />
               <span>{isPaired ? 'Entering Race...' : 'Pair & Launch Now'}</span>

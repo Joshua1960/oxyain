@@ -1,0 +1,238 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+
+    /* Apple HIG Light Mode Semantic Tokens */
+    --bg-canvas: #F5F5F7;
+    --bg-surface: #FFFFFF;
+    --bg-surface-elevated: #FFFFFF;
+    --bg-surface-overlay: rgba(255, 255, 255, 0.85);
+
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-default: rgba(0, 0, 0, 0.1);
+    --border-active: rgba(0, 0, 0, 0.28);
+
+    --text-primary: #1D1D1F;
+    --text-secondary: #6E6E73;
+    --text-muted: #86868B;
+
+    --brand-primary: #000000;
+    --brand-primary-hover: #1D1D1F;
+    --brand-accent: #0071E3;
+
+    --status-success: #34C759;
+    --status-warning: #FF9500;
+    --status-danger: #FF3B30;
+
+    --apple-glass-bg: rgba(255, 255, 255, 0.76);
+    --apple-glass-border: rgba(0, 0, 0, 0.08);
+    --apple-glass-border-top: rgba(255, 255, 255, 0.95);
+    --apple-glass-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.08);
+
+    --apple-card-bg: #FFFFFF;
+    --apple-card-border: rgba(0, 0, 0, 0.06);
+    --apple-card-border-top: rgba(0, 0, 0, 0.1);
+    --apple-card-hover: #FBFBFC;
+    --apple-card-shadow: 0 2px 14px rgba(0, 0, 0, 0.03);
+
+    --apple-pill-track: rgba(0, 0, 0, 0.06);
+    --apple-pill-active-bg: #FFFFFF;
+    --apple-pill-active-text: #1D1D1F;
+    --apple-pill-active-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .dark {
+    /* Apple HIG Dark Mode Semantic Tokens */
+    --bg-canvas: #05070E;
+    --bg-surface: #0B0E18;
+    --bg-surface-elevated: #111524;
+    --bg-surface-overlay: rgba(5, 7, 14, 0.85);
+
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-default: rgba(255, 255, 255, 0.14);
+    --border-active: rgba(255, 255, 255, 0.35);
+
+    --text-primary: #F5F5F7;
+    --text-secondary: #86868B;
+    --text-muted: #6E6E73;
+
+    --brand-primary: #FFFFFF;
+    --brand-primary-hover: #F5F5F7;
+    --brand-accent: #2997FF;
+
+    --status-success: #30D158;
+    --status-warning: #FF9F0A;
+    --status-danger: #FF453A;
+
+    --apple-glass-bg: rgba(10, 14, 24, 0.72);
+    --apple-glass-border: rgba(255, 255, 255, 0.09);
+    --apple-glass-border-top: rgba(255, 255, 255, 0.18);
+    --apple-glass-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.55);
+
+    --apple-card-bg: rgba(255, 255, 255, 0.035);
+    --apple-card-border: rgba(255, 255, 255, 0.07);
+    --apple-card-border-top: rgba(255, 255, 255, 0.15);
+    --apple-card-hover: rgba(255, 255, 255, 0.055);
+    --apple-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+
+    --apple-pill-track: rgba(0, 0, 0, 0.4);
+    --apple-pill-active-bg: rgba(255, 255, 255, 0.16);
+    --apple-pill-active-text: #FFFFFF;
+    --apple-pill-active-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  body {
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display, var(--font-sans, sans-serif));
+    letter-spacing: -0.025em;
+  }
+
+  code, pre, .font-mono, .tabular-nums {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
+  /* Custom Sleek Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(140, 140, 145, 0.25);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(140, 140, 145, 0.45);
+  }
+}
+
+/* Competitive HUD Stroke for Game Viewport */
+.hud-stroke {
+  paint-order: stroke fill;
+  -webkit-text-stroke: 3px rgba(7, 11, 20, 0.95);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+/* Glassmorphism Surface Tokens */
+.glass-panel {
+  background: var(--bg-surface-overlay);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-panel-elevated {
+  background: var(--bg-surface-elevated);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.15);
+}
+
+/* Apple Design System (iOS HIG) Materials & Vibrancy Tokens */
+.apple-glass {
+  background: var(--apple-glass-bg);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border: 1px solid var(--apple-glass-border);
+  border-top-color: var(--apple-glass-border-top);
+  box-shadow: var(--apple-glass-shadow);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.apple-card {
+  background: var(--apple-card-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--apple-card-border);
+  border-top-color: var(--apple-card-border-top);
+  box-shadow: var(--apple-card-shadow);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.apple-card:hover {
+  background: var(--apple-card-hover);
+  border-color: var(--border-default);
+}
+
+.apple-pill-active {
+  background: var(--apple-pill-active-bg);
+  color: var(--apple-pill-active-text);
+  box-shadow: var(--apple-pill-active-shadow);
+}
+
+/* Apple Liquid Glass Typography Effect */
+.liquid-glass-text {
+  background: linear-gradient(180deg, rgba(29, 29, 31, 0.35) 0%, rgba(29, 29, 31, 0.12) 65%, transparent 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  user-select: none;
+}
+
+.dark .liquid-glass-text {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.08) 65%, transparent 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  user-select: none;
+}
+
+/* Apple Liquid Glass Surface Effect for Footer Horizon */
+.liquid-glass-horizon {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark .liquid-glass-horizon {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Micro-interaction & Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Micro-interaction & Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

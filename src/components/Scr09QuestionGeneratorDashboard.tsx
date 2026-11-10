@@ -90,17 +90,17 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
       <div
         data-testid="scr09-route-guard-gate"
         onClick={onCloseToLobby}
-        className="fixed inset-0 z-30 bg-[#060A12]/95 overflow-y-auto flex items-center justify-center p-4 md:p-6 pointer-events-auto cursor-pointer"
+        className="fixed inset-0 z-30 bg-[#060A12]/95 backdrop-blur-xl overflow-y-auto flex items-center justify-center p-4 md:p-6 pointer-events-auto cursor-pointer"
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-2xl bg-[#0B1120] border border-amber-500/50 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6 cursor-default"
+          className="w-full max-w-2xl bg-[#070B14]/95 border border-amber-500/30 rounded-2xl p-6 md:p-8 shadow-2xl space-y-6 cursor-default"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
             <h1 className="text-2xl md:text-3xl font-bold font-display text-white">
               Question Generator
             </h1>
-            <span className="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-300 text-xs font-mono font-bold shrink-0">
+            <span className="px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-mono font-bold shrink-0">
               PRO
             </span>
           </div>
@@ -109,12 +109,12 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
             {accessGuard.reason}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-800">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/10">
             <button
               type="button"
               data-testid="scr09-gate-back-btn"
               onClick={onCloseToLobby}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300 transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 transition-colors cursor-pointer"
             >
               Return to Lobby
             </button>
@@ -124,7 +124,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 type="button"
                 data-testid="scr09-gate-instant-pro-btn"
                 onClick={onQuickUnlockDemoPro}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400 text-emerald-300 font-bold font-display text-xs tracking-wide transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 font-bold font-display text-xs tracking-wide transition-all cursor-pointer"
               >
                 Quick Demo Pro Unlock
               </button>
@@ -132,7 +132,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 type="button"
                 data-testid="scr09-gate-login-btn"
                 onClick={onOpenAuthModal}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-display text-xs tracking-wide transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-display text-xs tracking-wide transition-all shadow-lg shadow-amber-400/20 cursor-pointer active:scale-95"
               >
                 Sign In to Pro
               </button>
@@ -313,20 +313,20 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
     <div
       data-testid="scr09-generator-dashboard"
       onClick={onCloseToLobby}
-      className="fixed inset-0 z-30 bg-[#060A12]/95 overflow-y-auto p-4 md:p-6 pointer-events-auto text-slate-100 cursor-pointer"
+      className="fixed inset-0 z-30 bg-[#060A12]/95 backdrop-blur-xl overflow-y-auto p-4 md:p-6 pointer-events-auto text-slate-100 cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="max-w-7xl mx-auto space-y-4 cursor-default"
       >
         {/* Top Perimeter Header Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0B1120] border border-slate-800 rounded-xl px-5 py-3.5 shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl px-5 py-4 shadow-xl">
           <h1 className="text-xl md:text-2xl font-bold font-display text-white">
             Question Generator
           </h1>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="hidden xl:flex items-center gap-3 px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono">
+            <div className="hidden xl:flex items-center gap-3 px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-mono">
               <span className="text-emerald-300 font-semibold">
                 PRO: {session.fullName}
               </span>
@@ -341,7 +341,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 type="button"
                 data-testid="scr09-open-scr10-btn"
                 onClick={onOpenSourceExtractor}
-                className="px-3.5 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/60 text-xs font-semibold text-emerald-300 transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-xs font-semibold text-emerald-300 transition-colors cursor-pointer"
               >
                 AI Source Extractor
               </button>
@@ -351,7 +351,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
               type="button"
               data-testid="scr09-back-to-lobby-btn"
               onClick={onCloseToLobby}
-              className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-slate-200 transition-colors cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-200 transition-colors cursor-pointer"
             >
               Return to Lobby
             </button>
@@ -361,7 +361,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 type="button"
                 data-testid="scr09-launch-with-bank-btn"
                 onClick={() => onLaunchRaceWithBank(activeBank)}
-                className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-display text-xs tracking-wide transition-colors cursor-pointer shadow-lg"
+                className="px-4 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold font-display text-xs tracking-wide transition-all shadow-lg shadow-cyan-500/20 cursor-pointer active:scale-95"
               >
                 Launch 3D Race with This Bank ({activeBank.questions.length} Qs)
               </button>
@@ -374,7 +374,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
           {/* LEFT COLUMN (3 Cols): Question Bank Selector + Sharing Configuration (Private / Public) */}
           <div className="lg:col-span-3 space-y-4">
             {/* Saved Question Banks List */}
-            <div className="bg-[#0B1120] border border-slate-800 rounded-xl p-4 space-y-3">
+            <div className="bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-5 space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">
                   Question Banks ({banks.length})
@@ -383,7 +383,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                   type="button"
                   data-testid="scr09-new-bank-btn"
                   onClick={handleCreateNewBank}
-                  className="px-2.5 py-1 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-300 text-xs font-mono font-bold transition-colors cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 text-xs font-mono font-bold transition-colors cursor-pointer"
                 >
                   + New Bank
                 </button>
@@ -402,10 +402,10 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                         setEditingQuestionId(null);
                         setFormError(null);
                       }}
-                      className={`w-full p-3 rounded-lg border text-left transition-colors cursor-pointer ${
+                      className={`w-full p-3 rounded-xl border text-left transition-colors cursor-pointer ${
                         isSelected
-                          ? 'bg-cyan-950/50 border-cyan-400 text-white'
-                          : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:border-slate-700'
+                          ? 'bg-cyan-500/15 border-cyan-400/70 text-white shadow-sm'
+                          : 'bg-white/5 border-white/5 text-slate-300 hover:border-white/15'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
@@ -413,10 +413,10 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                           {bank.title}
                         </span>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 ${
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 ${
                             bank.visibility === 'public'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
                           }`}
                         >
                           {bank.visibility === 'public' ? '🌐 PUBLIC' : '🔒 PRIVATE'}
@@ -436,7 +436,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
 
             {/* Active Bank Metadata & Sharing Configuration (Private / Public) */}
             {activeBank && (
-              <div className="bg-[#0B1120] border border-slate-800 rounded-xl p-4 space-y-3">
+              <div className="bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-5 space-y-3.5">
                 <div className="text-xs font-mono uppercase tracking-wider text-cyan-400 font-semibold">
                   Bank Details &amp; Sharing
                 </div>
@@ -454,7 +454,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     type="text"
                     value={activeBank.title}
                     onChange={(e) => handleUpdateBankMeta({ title: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                   />
                 </div>
 
@@ -471,7 +471,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     rows={2}
                     value={activeBank.description}
                     onChange={(e) => handleUpdateBankMeta({ description: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-cyan-400"
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                   />
                 </div>
 
@@ -495,12 +495,12 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                             );
                           }}
                           aria-pressed={active}
-                          className={`p-2 rounded-lg border text-left transition-colors cursor-pointer ${
+                          className={`p-2.5 rounded-xl border text-left transition-colors cursor-pointer ${
                             active
                               ? vis === 'public'
-                                ? 'bg-emerald-500/20 border-emerald-400 text-white'
-                                : 'bg-amber-500/20 border-amber-400 text-white'
-                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                                ? 'bg-emerald-500/15 border-emerald-400 text-white'
+                                : 'bg-amber-500/15 border-amber-400 text-white'
+                              : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/15'
                           }`}
                         >
                           <div className="text-xs font-bold font-display">
@@ -516,7 +516,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 </div>
 
                 {/* Share Code & Delete Bank Row */}
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-2">
                   <div className="text-xs font-mono">
                     <span className="text-slate-400">Code: </span>
                     <span
@@ -530,7 +530,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     <button
                       type="button"
                       onClick={handleCopyShareCode}
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-mono text-cyan-300 cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-cyan-300 cursor-pointer transition-colors"
                     >
                       {copiedShareCode ? 'Copied!' : 'Copy Code'}
                     </button>
@@ -538,7 +538,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                       <button
                         type="button"
                         onClick={() => onDeleteBank(activeBank.id)}
-                        className="px-2 py-1 rounded bg-rose-950/70 hover:bg-rose-900 border border-rose-500/40 text-[11px] font-mono text-rose-300 cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[11px] font-mono text-rose-300 cursor-pointer transition-colors"
                       >
                         Delete
                       </button>
@@ -550,8 +550,8 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
           </div>
 
           {/* CENTER COLUMN (5 Cols): Individual Question & 4-Option Multiple-Choice Builder Form */}
-          <div className="lg:col-span-5 bg-[#0B1120] border border-slate-800 rounded-xl p-4 md:p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="lg:col-span-5 bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 md:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h2 className="text-base font-bold font-display text-white">
                 {editingQuestionId ? 'Edit Question' : 'Add Question'}
               </h2>
@@ -559,14 +559,14 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 <button
                   type="button"
                   onClick={handleResetQuestionForm}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-300 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 cursor-pointer transition-colors"
                 >
                   Cancel Edit
                 </button>
               )}
             </div>
 
-            <form onSubmit={handleSaveQuestionToBank} className="space-y-3.5" noValidate>
+            <form onSubmit={handleSaveQuestionToBank} className="space-y-4" noValidate>
               {/* Subject, Difficulty Tier & Topic Row */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
@@ -583,10 +583,10 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     onChange={(e) =>
                       setDraftSubject(e.target.value as Exclude<SubjectId, 'all'>)
                     }
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full px-2.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all cursor-pointer"
                   >
                     {SUBJECT_CHOICES.map((sId) => (
-                      <option key={sId} value={sId}>
+                      <option key={sId} value={sId} className="bg-slate-950 text-white">
                         {SUBJECT_METADATA[sId].shortLabel}
                       </option>
                     ))}
@@ -607,11 +607,11 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     onChange={(e) =>
                       setDraftDifficulty(e.target.value as 'easy' | 'medium' | 'hard')
                     }
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full px-2.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all cursor-pointer"
                   >
-                    <option value="easy">Easy (Foundation)</option>
-                    <option value="medium">Medium (Varsity)</option>
-                    <option value="hard">Hard (Olympiad)</option>
+                    <option value="easy" className="bg-slate-950 text-white">Easy (Foundation)</option>
+                    <option value="medium" className="bg-slate-950 text-white">Medium (Varsity)</option>
+                    <option value="hard" className="bg-slate-950 text-white">Hard (Olympiad)</option>
                   </select>
                 </div>
 
@@ -629,7 +629,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     value={draftTopic}
                     onChange={(e) => setDraftTopic(e.target.value)}
                     placeholder="e.g., Derivatives"
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full px-2.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                   />
                 </div>
               </div>
@@ -652,7 +652,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     if (formError) setFormError(null);
                   }}
                   placeholder="Enter the academic question prompt displayed on the split-screen race deck..."
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs md:text-sm text-white focus:outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs md:text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
 
@@ -662,7 +662,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                   <span className="text-slate-300 font-semibold">
                     ANSWER OPTIONS
                   </span>
-                  <span className="text-emerald-400">
+                  <span className="text-emerald-400 font-bold">
                     Correct: Option #{draftCorrectIndex + 1}
                   </span>
                 </div>
@@ -673,10 +673,10 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                   return (
                     <div
                       key={optIdx}
-                      className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                      className={`flex items-center gap-2 p-2 rounded-xl border transition-colors ${
                         isTargetCorrect
-                          ? 'bg-emerald-950/40 border-emerald-500/60'
-                          : 'bg-slate-900/80 border-slate-800'
+                          ? 'bg-emerald-500/10 border-emerald-400/40'
+                          : 'bg-white/5 border-white/5'
                       }`}
                     >
                       <button
@@ -685,10 +685,10 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                         onClick={() => setDraftCorrectIndex(optIdx)}
                         aria-pressed={isTargetCorrect}
                         title={`Set Option ${optionLetter} as Correct Answer`}
-                        className={`px-2.5 py-1.5 rounded-md text-[11px] font-mono font-bold shrink-0 transition-colors cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold shrink-0 transition-colors cursor-pointer ${
                           isTargetCorrect
-                            ? 'bg-emerald-500 text-slate-950'
-                            : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                            ? 'bg-emerald-400 text-slate-950 shadow-sm'
+                            : 'bg-white/10 hover:bg-white/15 text-slate-300'
                         }`}
                       >
                         {isTargetCorrect ? `✓ Option ${optionLetter}` : `Option ${optionLetter}`}
@@ -701,7 +701,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                         onChange={(e) => handleOptionChange(optIdx, e.target.value)}
                         placeholder={`Option ${optionLetter} text...`}
                         aria-label={`Multiple-choice Option ${optIdx + 1}`}
-                        className="w-full px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-cyan-400"
+                        className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                       />
                     </div>
                   );
@@ -726,7 +726,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                     if (formError) setFormError(null);
                   }}
                   placeholder="Explain why the correct answer is right..."
-                  className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-cyan-400"
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
 
@@ -734,7 +734,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 <div
                   role="alert"
                   data-testid="scr09-form-error"
-                  className="px-3 py-2 rounded-lg bg-rose-950/80 border border-rose-500/60 text-xs text-rose-200"
+                  className="px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-200"
                 >
                   {formError}
                 </div>
@@ -744,7 +744,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 <div
                   role="status"
                   data-testid="scr09-save-toast"
-                  className="px-3 py-2 rounded-lg bg-emerald-950/80 border border-emerald-500/60 text-xs text-emerald-200 font-mono"
+                  className="px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200 font-mono"
                 >
                   ✓ {saveToast}
                 </div>
@@ -753,7 +753,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
               <button
                 type="submit"
                 data-testid="scr09-save-question-btn"
-                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-display text-xs md:text-sm tracking-wide transition-colors cursor-pointer shadow-lg"
+                className="w-full py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold font-display text-xs md:text-sm tracking-wide transition-all shadow-lg shadow-emerald-400/20 cursor-pointer active:scale-95"
               >
                 {editingQuestionId
                   ? 'Save Question Configuration Changes'
@@ -763,8 +763,8 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
           </div>
 
           {/* RIGHT COLUMN (4 Cols): Active Bank Question Roster Inspector */}
-          <div className="lg:col-span-4 bg-[#0B1120] border border-slate-800 rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div className="lg:col-span-4 bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <div className="text-xs font-mono uppercase tracking-wider text-cyan-400 font-semibold">
                   Questions in Bank
@@ -776,7 +776,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                 </div>
               </div>
               {activeBank && (
-                <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-[11px] font-mono text-cyan-300">
+                <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] font-mono text-cyan-300">
                   {activeBank.shareCode}
                 </span>
               )}
@@ -785,19 +785,21 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
             {activeBank && (
               <div
                 data-testid="scr09-question-list"
-                className="space-y-2.5 max-h-[540px] overflow-y-auto pr-1"
+                className="space-y-3 max-h-[540px] overflow-y-auto pr-1"
               >
                 {activeBank.questions.map((q, qIdx) => (
                   <div
                     key={q.id}
                     data-testid={`scr09-question-card-${qIdx}`}
-                    className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2"
+                    className="p-3.5 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors space-y-2.5"
                   >
                     <div className="flex items-center justify-between gap-2 text-[11px] font-mono">
                       <span className="text-cyan-400 font-bold">
                         Q{qIdx + 1} · {q.subjectLabel} · {q.topic}
                       </span>
-                      <span className="text-amber-400">{q.difficulty}</span>
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase">
+                        {q.difficulty}
+                      </span>
                     </div>
 
                     <p className="text-xs font-semibold text-white leading-snug">
@@ -810,10 +812,10 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                         return (
                           <div
                             key={oIdx}
-                            className={`px-2 py-1 rounded border truncate ${
+                            className={`px-2.5 py-1.5 rounded-lg border truncate transition-colors ${
                               isCorrect
-                                ? 'bg-emerald-950/70 border-emerald-500/60 text-emerald-300 font-semibold'
-                                : 'bg-slate-950 border-slate-800 text-slate-400'
+                                ? 'bg-emerald-500/15 border-emerald-400/50 text-emerald-300 font-semibold'
+                                : 'bg-black/30 border-white/5 text-slate-400'
                             }`}
                           >
                             [{oIdx}] {optText} {isCorrect ? '✓' : ''}
@@ -822,7 +824,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                       })}
                     </div>
 
-                    <div className="text-[11px] text-slate-400 bg-slate-950/80 px-2.5 py-1.5 rounded border border-slate-800/80">
+                    <div className="text-[11px] text-slate-400 bg-black/40 px-3 py-2 rounded-lg border border-white/5">
                       <span className="font-mono text-amber-300">Explanation: </span>
                       {q.explanation}
                     </div>
@@ -832,7 +834,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                         type="button"
                         data-testid={`scr09-edit-question-${qIdx}`}
                         onClick={() => handleLoadQuestionForEdit(q)}
-                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-mono text-cyan-300 cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-cyan-300 cursor-pointer transition-colors"
                       >
                         Edit
                       </button>
@@ -840,7 +842,7 @@ export const Scr09QuestionGeneratorDashboard: React.FC<
                         type="button"
                         data-testid={`scr09-delete-question-${qIdx}`}
                         onClick={() => handleDeleteQuestion(q.id)}
-                        className="px-2.5 py-1 rounded bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[11px] font-mono text-rose-300 cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[11px] font-mono text-rose-300 cursor-pointer transition-colors"
                       >
                         Remove
                       </button>

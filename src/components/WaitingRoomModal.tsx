@@ -103,18 +103,18 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl rounded-xl bg-[#0F172A]/95 border border-cyan-500/35 shadow-[0_24px_70px_rgba(0,0,0,0.85)] overflow-hidden text-[#F8FAFC]"
+        className="w-full max-w-2xl rounded-2xl bg-[#0D1527]/98 border border-white/[0.12] shadow-2xl backdrop-blur-2xl overflow-hidden text-[#F8FAFC]"
       >
         {/* Header */}
-        <div className="px-6 py-4 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div className="px-6 py-4 bg-[#070B14]/80 border-b border-white/[0.08] flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/15 border border-cyan-400/35 text-cyan-300 text-xs font-mono font-bold">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-mono font-bold">
               <Users className="w-3.5 h-3.5" />
               Multiplayer Room
             </span>
             <span
               data-testid="waiting-room-joined-badge"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/90 border border-slate-700 text-slate-200 text-xs font-mono"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/[0.05] border border-white/[0.08] text-slate-200 text-xs font-mono"
             >
               <Wifi className={`w-3 h-3 ${wsConnected ? 'text-emerald-400' : 'text-amber-400'}`} />
               {launchStatus.humanCount} Joined
@@ -125,7 +125,7 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
             <button
               type="button"
               onClick={handleCopyCode}
-              className="px-3 py-1.5 rounded-lg bg-slate-950/90 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="h-9 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <span>Room: {roomCode}</span>
               {copiedCode ? (
@@ -138,7 +138,7 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
               type="button"
               onClick={onLeaveWaitingRoom}
               aria-label="Close waiting room"
-              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-colors cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white border border-white/[0.08] transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -269,7 +269,7 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
                 type="button"
                 data-testid="waiting-room-leave-btn"
                 onClick={onLeaveWaitingRoom}
-                className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
+                className="h-11 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 text-xs font-semibold border border-white/[0.08] transition-all cursor-pointer"
               >
                 Back to Lobby
               </button>
@@ -278,10 +278,10 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
                 type="button"
                 data-testid="waiting-room-ready-btn"
                 onClick={onToggleReady}
-                className={`px-3.5 py-2 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                className={`h-11 px-4 rounded-xl text-xs font-semibold border flex items-center gap-2 transition-all cursor-pointer ${
                   localIsReady
-                    ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25'
-                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                    : 'bg-white/[0.04] border-white/[0.08] text-slate-300 hover:bg-white/[0.08]'
                 }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -298,10 +298,10 @@ export const WaitingRoomModal: React.FC<WaitingRoomModalProps> = ({
                   onLaunchMatch();
                 }
               }}
-              className={`px-5 py-2.5 rounded-lg font-display font-bold text-xs tracking-wide flex items-center gap-2 transition-all ${
+              className={`h-11 px-6 rounded-xl font-display font-bold text-xs tracking-wide flex items-center gap-2 transition-all active:scale-[0.98] ${
                 localIsHost && launchStatus.allowed && wsConnected
-                  ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 cursor-pointer'
-                  : 'bg-slate-800 border border-slate-700 text-slate-400 cursor-not-allowed opacity-75'
+                  ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20 cursor-pointer'
+                  : 'bg-white/[0.04] border border-white/[0.08] text-slate-500 cursor-not-allowed opacity-60'
               }`}
             >
               <Flag className="w-4 h-4" />

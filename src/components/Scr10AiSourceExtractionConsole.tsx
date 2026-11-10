@@ -88,28 +88,31 @@ export const Scr10AiSourceExtractionConsole: React.FC<
       <div
         data-testid="scr10-route-guard"
         onClick={onBackToLobby}
-        className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-[#060A12]/95 overflow-y-auto cursor-pointer"
+        className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-[#060A12]/95 backdrop-blur-xl overflow-y-auto cursor-pointer"
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-xl rounded-xl bg-[#0B1120] border border-amber-500/45 p-6 md:p-8 shadow-2xl space-y-5 cursor-default"
+          className="w-full max-w-xl rounded-2xl bg-[#070B14]/95 border border-amber-500/30 p-6 md:p-8 shadow-2xl space-y-6 cursor-default"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
             <h1 className="text-2xl md:text-3xl font-bold text-white font-display">
               AI Source Extractor
             </h1>
+            <span className="px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs font-mono font-bold shrink-0">
+              PRO
+            </span>
           </div>
 
           <p className="text-sm text-slate-300 leading-relaxed">
             {access.reason}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2 border-t border-white/10">
             <button
               type="button"
               data-testid="scr10-guard-back-btn"
               onClick={onBackToLobby}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
             >
               Return to Lobby
             </button>
@@ -117,7 +120,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               type="button"
               data-testid="scr10-guard-demo-unlock-btn"
               onClick={onQuickDemoProLogin}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/60 text-emerald-300 text-xs font-semibold transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-xs font-semibold transition-colors cursor-pointer"
             >
               Quick Demo Unlock
             </button>
@@ -125,7 +128,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               type="button"
               data-testid="scr10-guard-login-btn"
               onClick={onOpenAuthForPro}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-display text-xs transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-display text-xs transition-all shadow-lg shadow-amber-400/20 cursor-pointer active:scale-95"
             >
               Sign In
             </button>
@@ -535,21 +538,21 @@ export const Scr10AiSourceExtractionConsole: React.FC<
     <div
       data-testid="scr10-extraction-console"
       onClick={onBackToLobby}
-      className="fixed inset-0 z-30 bg-[#060A12]/95 text-slate-100 overflow-y-auto p-4 md:p-6 cursor-pointer"
+      className="fixed inset-0 z-30 bg-[#060A12]/95 backdrop-blur-xl text-slate-100 overflow-y-auto p-4 md:p-6 cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="max-w-7xl mx-auto space-y-5 cursor-default"
       >
         {/* Top Header Bar */}
-        <header className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        <header className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
           <h1 className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight">
             AI Source Extractor
           </h1>
 
           <div className="flex flex-wrap items-center gap-2.5">
             {session?.fullName && (
-              <div className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-emerald-400 font-semibold">
+              <div className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-emerald-400 font-semibold">
                 {session.fullName}
               </div>
             )}
@@ -557,7 +560,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               type="button"
               data-testid="scr10-back-to-lobby-btn"
               onClick={onBackToLobby}
-              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-100 border border-white/10 text-xs font-semibold transition-colors cursor-pointer"
             >
               Return to Lobby
             </button>
@@ -567,8 +570,8 @@ export const Scr10AiSourceExtractionConsole: React.FC<
         {/* Main 12-Column Processing Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* LEFT COLUMN (5 Cols): Drag-and-Drop File Upload (PDF / DOCX) & Website URL Input */}
-          <div className="lg:col-span-5 bg-[#0B1120] border border-slate-800 rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="lg:col-span-5 bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 md:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h2 className="text-base font-bold text-white font-display">
                 Source Material
               </h2>
@@ -605,10 +608,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                         );
                       }}
                       aria-pressed={active}
-                      className={`px-3 py-2 rounded-lg border text-left transition-colors cursor-pointer ${
+                      className={`px-3 py-2 rounded-xl border text-left transition-colors cursor-pointer ${
                         active
-                          ? 'bg-cyan-500/20 border-cyan-400 text-white'
-                          : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                          ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-sm'
+                          : 'bg-white/5 border-white/5 text-slate-300 hover:border-white/15'
                       }`}
                     >
                       <div className="text-xs font-bold font-display">
@@ -634,10 +637,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                 onDragLeave={() => setIsDraggingOver(false)}
                 onDrop={handleDropFile}
                 onClick={() => fileInputRef.current?.click()}
-                className={`p-4 rounded-xl border-2 border-dashed text-center transition-colors cursor-pointer ${
+                className={`p-5 rounded-2xl border-2 border-dashed text-center transition-all cursor-pointer ${
                   isDraggingOver
                     ? 'bg-cyan-500/15 border-cyan-400 text-white'
-                    : 'bg-slate-950/80 border-slate-700 hover:border-cyan-500/60 text-slate-300'
+                    : 'bg-black/30 border-white/15 hover:border-cyan-400/60 hover:bg-white/5 text-slate-300'
                 }`}
               >
                 <input
@@ -651,13 +654,13 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                 <div className="text-xs font-mono text-cyan-300 font-bold mb-1">
                   {isParsingFile ? 'Reading Document...' : 'Upload PDF or DOCX File'}
                 </div>
-                <div className="text-xs text-slate-300 mb-2">
+                <div className="text-xs text-slate-400 mb-2">
                   Drag and drop or click to browse
                 </div>
                 {fileName && (
                   <div
                     data-testid="ingested-file-badge"
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded bg-slate-900 border border-slate-700 text-xs font-mono text-emerald-300"
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/10 border border-white/10 text-xs font-mono text-emerald-300"
                   >
                     <span>{fileName}</span>
                     <span className="text-slate-400 tabular-nums">
@@ -685,14 +688,14 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                       setErrorMessage(null);
                     }}
                     placeholder="https://example.edu/article"
-                    className="flex-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
+                    className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                   />
                   <button
                     type="button"
                     data-testid="fetch-url-text-btn"
                     disabled={isParsingFile}
                     onClick={handleFetchWebsiteText}
-                    className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-cyan-300 whitespace-nowrap cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-semibold text-cyan-300 whitespace-nowrap cursor-pointer transition-colors"
                   >
                     {isParsingFile ? 'Loading...' : 'Load URL'}
                   </button>
@@ -725,7 +728,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                   setErrorMessage(null);
                 }}
                 placeholder="Paste or edit your document or article text here..."
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
               />
             </div>
 
@@ -740,10 +743,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="button"
                     data-testid="engine-gemini-btn"
                     onClick={() => setParserEngine('gemini-3.8-flash')}
-                    className={`px-2.5 py-1.5 rounded-lg border text-left text-xs font-mono cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-xl border text-left text-xs font-mono cursor-pointer transition-colors ${
                       parserEngine === 'gemini-3.8-flash'
-                        ? 'bg-cyan-500/20 border-cyan-400 text-white font-bold'
-                        : 'bg-slate-900 border-slate-800 text-slate-300'
+                        ? 'bg-cyan-500/15 border-cyan-400 text-white font-bold'
+                        : 'bg-white/5 border-white/5 text-slate-300 hover:border-white/15'
                     }`}
                   >
                     Gemini
@@ -752,10 +755,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="button"
                     data-testid="engine-claude-btn"
                     onClick={() => setParserEngine('claude-json-schema')}
-                    className={`px-2.5 py-1.5 rounded-lg border text-left text-xs font-mono cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-xl border text-left text-xs font-mono cursor-pointer transition-colors ${
                       parserEngine === 'claude-json-schema'
-                        ? 'bg-amber-500/20 border-amber-400 text-white font-bold'
-                        : 'bg-slate-900 border-slate-800 text-slate-300'
+                        ? 'bg-amber-500/15 border-amber-400 text-white font-bold'
+                        : 'bg-white/5 border-white/5 text-slate-300 hover:border-white/15'
                     }`}
                   >
                     Claude
@@ -774,10 +777,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                       type="button"
                       data-testid={`extract-count-${cnt}-btn`}
                       onClick={() => setQuestionCount(cnt)}
-                      className={`py-1.5 rounded-lg border text-xs font-mono font-bold cursor-pointer ${
+                      className={`py-1.5 rounded-xl border text-xs font-mono font-bold cursor-pointer transition-colors ${
                         questionCount === cnt
-                          ? 'bg-cyan-500/20 border-cyan-400 text-white'
-                          : 'bg-slate-900 border-slate-800 text-slate-300'
+                          ? 'bg-cyan-500/15 border-cyan-400 text-white'
+                          : 'bg-white/5 border-white/5 text-slate-300 hover:border-white/15'
                       }`}
                     >
                       {cnt} Qs
@@ -798,10 +801,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="button"
                     data-testid={`extract-diff-${tier}-btn`}
                     onClick={() => setTargetDifficulty(tier)}
-                    className={`py-1.5 rounded-lg border text-xs font-semibold capitalize cursor-pointer ${
+                    className={`py-1.5 rounded-xl border text-xs font-semibold capitalize cursor-pointer transition-colors ${
                       targetDifficulty === tier
-                        ? 'bg-emerald-500/20 border-emerald-400 text-white'
-                        : 'bg-slate-900 border-slate-800 text-slate-300'
+                        ? 'bg-emerald-500/15 border-emerald-400 text-white'
+                        : 'bg-white/5 border-white/5 text-slate-300 hover:border-white/15'
                     }`}
                   >
                     {tier}
@@ -814,7 +817,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               <div
                 role="alert"
                 data-testid="scr10-error-alert"
-                className="p-3 rounded-lg bg-rose-950/90 border border-rose-500/60 text-xs text-rose-200"
+                className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-200"
               >
                 {errorMessage}
               </div>
@@ -825,7 +828,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               data-testid="run-ai-extraction-btn"
               disabled={isExtracting || isParsingFile}
               onClick={handleRunExtractionPipeline}
-              className="w-full py-2.5 px-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 text-slate-950 font-bold font-display text-sm transition-colors cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-60 text-slate-950 font-bold font-display text-sm transition-all shadow-lg shadow-cyan-500/20 cursor-pointer active:scale-95"
             >
               {isExtracting
                 ? 'Extracting Questions...'
@@ -836,8 +839,8 @@ export const Scr10AiSourceExtractionConsole: React.FC<
           {/* RIGHT COLUMN (7 Cols): Extraction Progress & Extracted Questions */}
           <div className="lg:col-span-7 space-y-5">
             {/* Extraction Progress Bar & Checks */}
-            <div className="bg-[#0B1120] border border-slate-800 rounded-xl p-5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div className="bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 md:p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                 <h2 className="text-base font-bold text-white font-display">
                   Extraction Progress
                 </h2>
@@ -859,10 +862,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     {pipelinePhaseLabel}
                   </span>
                 </div>
-                <div className="w-full h-3 rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden">
                   <div
                     data-testid="extraction-progress-bar"
-                    className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -876,18 +879,18 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                 {validationChecks.map((chk) => {
                   const badgeStyle =
                     chk.status === 'passed'
-                      ? 'bg-emerald-950 border-emerald-500/60 text-emerald-300'
+                      ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300'
                       : chk.status === 'running'
-                      ? 'bg-cyan-950 border-cyan-400 text-cyan-300'
+                      ? 'bg-cyan-500/15 border-cyan-400/40 text-cyan-300'
                       : chk.status === 'failed'
-                      ? 'bg-rose-950 border-rose-500 text-rose-300'
-                      : 'bg-slate-900 border-slate-700 text-slate-400';
+                      ? 'bg-rose-500/15 border-rose-500/40 text-rose-300'
+                      : 'bg-white/5 border-white/10 text-slate-400';
 
                   return (
                     <div
                       key={chk.id}
                       data-testid={`validation-${chk.id}`}
-                      className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      className="p-3 rounded-xl bg-white/5 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                     >
                       <div className="min-w-0">
                         <span className="text-xs font-semibold text-white">
@@ -903,7 +906,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                         </span>
                         <span
                           data-testid={`status-${chk.id}`}
-                          className={`px-2 py-0.5 rounded border text-[10px] font-mono font-bold uppercase ${badgeStyle}`}
+                          className={`px-2.5 py-0.5 rounded-md border text-[10px] font-mono font-bold uppercase ${badgeStyle}`}
                         >
                           {chk.status}
                         </span>
@@ -915,8 +918,8 @@ export const Scr10AiSourceExtractionConsole: React.FC<
             </div>
 
             {/* Extracted Question Bank Panel */}
-            <div className="bg-[#0B1120] border border-slate-800 rounded-xl p-5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div className="bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 md:p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                 <h2 className="text-base font-bold text-white font-display">
                   Extracted Questions ({extractedQuestions.length})
                 </h2>
@@ -925,10 +928,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="button"
                     data-testid="extracted-visibility-private-btn"
                     onClick={() => setBankVisibility('private')}
-                    className={`px-2.5 py-1 rounded text-xs font-mono border cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-mono border cursor-pointer transition-colors ${
                       bankVisibility === 'private'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                        ? 'bg-amber-500/15 border-amber-400 text-amber-200'
+                        : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/15'
                     }`}
                   >
                     Private
@@ -937,10 +940,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="button"
                     data-testid="extracted-visibility-public-btn"
                     onClick={() => setBankVisibility('public')}
-                    className={`px-2.5 py-1 rounded text-xs font-mono border cursor-pointer ${
+                    className={`px-3 py-1 rounded-lg text-xs font-mono border cursor-pointer transition-colors ${
                       bankVisibility === 'public'
-                        ? 'bg-emerald-500/20 border-emerald-400 text-emerald-200'
-                        : 'bg-slate-900 border-slate-800 text-slate-400'
+                        ? 'bg-emerald-500/15 border-emerald-400 text-emerald-200'
+                        : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/15'
                     }`}
                   >
                     Public
@@ -952,14 +955,14 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                 <div
                   role="status"
                   data-testid="scr10-status-banner"
-                  className="p-3 rounded-lg bg-emerald-950/85 border border-emerald-500/50 text-xs text-emerald-200"
+                  className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-400/40 text-xs text-emerald-200"
                 >
                   {statusBanner}
                 </div>
               )}
 
               {/* Bank Title Input & Action Bar */}
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 <div>
                   <label
                     htmlFor="extracted-bank-title"
@@ -973,7 +976,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="text"
                     value={bankTitle}
                     onChange={(e) => setBankTitle(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                   />
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
@@ -981,7 +984,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="button"
                     data-testid="save-extracted-bank-btn"
                     onClick={handleSaveBankToLibrary}
-                    className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white transition-colors whitespace-nowrap cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-semibold text-white transition-colors whitespace-nowrap cursor-pointer"
                   >
                     Save Bank
                   </button>
@@ -989,7 +992,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                     type="button"
                     data-testid="race-extracted-bank-btn"
                     onClick={handleSaveAndRaceIn3D}
-                    className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-display text-xs transition-colors whitespace-nowrap cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold font-display text-xs transition-all shadow-lg shadow-emerald-400/20 whitespace-nowrap cursor-pointer active:scale-95"
                   >
                     Save &amp; Race in 3D
                   </button>
@@ -1000,7 +1003,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               {extractedQuestions.length === 0 ? (
                 <div
                   data-testid="extracted-empty-state"
-                  className="p-6 rounded-xl bg-slate-950/70 border border-slate-800 text-center space-y-1.5"
+                  className="p-8 rounded-2xl bg-black/30 border border-white/5 text-center space-y-1.5"
                 >
                   <div className="text-sm font-semibold text-slate-200">
                     No Questions Extracted Yet
@@ -1012,19 +1015,19 @@ export const Scr10AiSourceExtractionConsole: React.FC<
               ) : (
                 <div
                   data-testid="extracted-questions-list"
-                  className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1"
+                  className="space-y-3 max-h-[360px] overflow-y-auto pr-1"
                 >
                   {extractedQuestions.map((q, qIdx) => (
                     <div
                       key={q.id}
                       data-testid={`extracted-question-card-${qIdx}`}
-                      className="p-3.5 rounded-lg bg-slate-950/90 border border-slate-800 space-y-2"
+                      className="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors space-y-2.5"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[11px] font-mono text-cyan-400 font-bold">
                           Q{qIdx + 1} · {q.topic} · {q.difficulty}
                         </span>
-                        <span className="text-[10px] font-mono text-emerald-400">
+                        <span className="text-[10px] font-mono text-emerald-400 font-semibold">
                           Answer: Option {OPTION_LETTERS[q.correctIndex]}
                         </span>
                       </div>
@@ -1037,10 +1040,10 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                           return (
                             <div
                               key={optIdx}
-                              className={`px-2.5 py-1.5 rounded border text-xs flex items-center gap-2 ${
+                              className={`px-3 py-2 rounded-lg border text-xs flex items-center gap-2 transition-colors ${
                                 isCorrect
-                                  ? 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200 font-semibold'
-                                  : 'bg-slate-900/80 border-slate-800 text-slate-300'
+                                  ? 'bg-emerald-500/15 border-emerald-400/50 text-emerald-200 font-semibold'
+                                  : 'bg-black/30 border-white/5 text-slate-300'
                               }`}
                             >
                               <span className="font-mono text-[10px] font-bold">
@@ -1051,7 +1054,7 @@ export const Scr10AiSourceExtractionConsole: React.FC<
                           );
                         })}
                       </div>
-                      <div className="text-[11px] text-slate-400 border-t border-slate-800/80 pt-1.5">
+                      <div className="text-[11px] text-slate-400 border-t border-white/5 pt-2">
                         <span className="font-mono text-slate-300">
                           Explanation:{' '}
                         </span>

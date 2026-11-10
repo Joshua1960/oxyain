@@ -53,11 +53,11 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
       aria-labelledby="status-modal-heading"
       data-testid="status-modal-backdrop"
       onClick={isPaused ? onResume : onReturnToTitle}
-      className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/78 pointer-events-auto cursor-pointer"
+      className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md pointer-events-auto cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[#0B1120] border border-slate-700 rounded-xl p-6 shadow-2xl space-y-5 cursor-default"
+        className="w-full max-w-lg bg-[#0D1527]/95 border border-white/[0.12] rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl space-y-6 cursor-default"
       >
         {isPaused ? (
           <>
@@ -73,39 +73,39 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5 text-left">
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+            <div className="grid grid-cols-3 gap-3 text-left">
+              <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
                 <div className="text-[11px] text-slate-400">Current Speed</div>
-                <div className="text-lg font-bold font-mono text-cyan-400 tabular-nums">
+                <div className="text-xl font-bold font-mono text-cyan-400 tabular-nums mt-1">
                   {Math.round(match.player.speedKmh)} km/h
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
                 <div className="text-[11px] text-slate-400">Position / Streak</div>
-                <div className="text-lg font-bold font-mono text-amber-400 tabular-nums">
+                <div className="text-xl font-bold font-mono text-amber-400 tabular-nums mt-1">
                   #{playerFinalRank}/{totalRacers} · {match.player.streak}x
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
                 <div className="text-[11px] text-slate-400">Progress</div>
-                <div className="text-lg font-bold font-mono text-white tabular-nums">
+                <div className="text-xl font-bold font-mono text-white tabular-nums mt-1">
                   {match.player.answeredCount}/{match.questions.length} Qs
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
                 type="button"
                 onClick={onResume}
-                className="flex-1 px-4 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display tracking-wide transition-colors cursor-pointer"
+                className="flex-1 h-11 px-5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display tracking-wide transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98] cursor-pointer"
               >
                 Resume Match
               </button>
               <button
                 type="button"
                 onClick={onRestart}
-                className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold text-xs transition-colors cursor-pointer"
+                className="h-11 px-5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-slate-100 font-semibold text-xs border border-white/[0.1] transition-all active:scale-[0.98] cursor-pointer"
               >
                 Restart
               </button>
@@ -114,7 +114,7 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
                   type="button"
                   data-testid="modal-quit-game-btn"
                   onClick={onQuitGame}
-                  className="px-4 py-2.5 rounded-lg bg-rose-950 hover:bg-rose-900 border border-rose-500/60 text-rose-200 font-bold font-display text-xs transition-colors cursor-pointer"
+                  className="h-11 px-5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 font-bold font-display text-xs transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Quit Game
                 </button>
@@ -122,7 +122,7 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
                 <button
                   type="button"
                   onClick={onReturnToTitle}
-                  className="px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
+                  className="h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 font-semibold text-xs transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Return to Lobby
                 </button>
@@ -148,29 +148,29 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
             </div>
 
             {/* 3 Tabular-Nums Mastery Stat Tiles */}
-            <div className="grid grid-cols-3 gap-2.5 text-left">
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+            <div className="grid grid-cols-3 gap-3 text-left">
+              <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
                 <div className="text-[11px] text-slate-400">Peak Velocity</div>
-                <div className="text-lg font-bold font-mono text-cyan-400 tabular-nums">
+                <div className="text-xl font-bold font-mono text-cyan-400 tabular-nums mt-1">
                   {Math.round(match.player.peakSpeedKmh)} km/h
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
                 <div className="text-[11px] text-slate-400">Quiz Accuracy</div>
-                <div className="text-lg font-bold font-mono text-emerald-400 tabular-nums">
+                <div className="text-xl font-bold font-mono text-emerald-400 tabular-nums mt-1">
                   {accuracyPct}% ({match.player.correctCount}/{match.player.answeredCount})
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded-xl bg-white/[0.04] border border-white/[0.08]">
                 <div className="text-[11px] text-slate-400">Best Streak / Time</div>
-                <div className="text-lg font-bold font-mono text-amber-400 tabular-nums">
+                <div className="text-xl font-bold font-mono text-amber-400 tabular-nums mt-1">
                   {match.player.bestStreak}x · {Math.round(match.elapsedSeconds)}s
                 </div>
               </div>
             </div>
 
             {/* Multi-Competitor Room Standings Table */}
-            <div className="rounded-lg bg-slate-950/90 border border-slate-800 p-3 space-y-1.5 max-h-36 overflow-y-auto">
+            <div className="rounded-xl bg-[#070B14] border border-white/[0.08] p-4 space-y-2 max-h-40 overflow-y-auto">
               <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
                 ROOM {match.roomCode} FINAL STANDINGS ({totalRacers} COMPETITORS)
               </div>
@@ -179,8 +179,8 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
                 return (
                   <div
                     key={racer.id}
-                    className={`flex items-center justify-between text-xs px-2.5 py-1 rounded ${
-                      isSelf ? 'bg-cyan-500/15 text-cyan-200 font-semibold' : 'text-slate-300'
+                    className={`flex items-center justify-between text-xs px-3 py-1.5 rounded-lg ${
+                      isSelf ? 'bg-cyan-500/15 text-cyan-200 font-semibold border border-cyan-500/30' : 'text-slate-300'
                     }`}
                   >
                     <span className="truncate">
@@ -196,7 +196,7 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
 
             {/* Post-Match Replay Opt-In Card */}
             {hasReplayBuffer ? (
-              <div className="p-3.5 rounded-xl bg-cyan-950/40 border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold font-display text-cyan-300">
                     3D Match Replay Available ({match.replayEvents.length} Steps)
@@ -209,7 +209,7 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
                   type="button"
                   data-testid="launch-replay-arena-btn"
                   onClick={onLaunchReplayArena}
-                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-display text-xs whitespace-nowrap shrink-0 cursor-pointer"
+                  className="h-10 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-display text-xs whitespace-nowrap shrink-0 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Watch Replay
                 </button>
@@ -218,7 +218,7 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
               match.replayMemoryFlushed && (
                 <div
                   data-testid="replay-memory-flushed-banner"
-                  className="px-3.5 py-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-400 flex items-center justify-between"
+                  className="px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-slate-400 flex items-center justify-between"
                 >
                   <span>Match Replay Closed</span>
                   <span className="text-emerald-400 font-bold">Session Cleared</span>
@@ -226,19 +226,19 @@ export const StatusModalCard: React.FC<StatusModalCardProps> = ({
               )
             )}
 
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
                 type="button"
                 data-start="true"
                 onClick={onRestart}
-                className="flex-1 px-5 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display tracking-wide transition-colors cursor-pointer"
+                className="flex-1 h-11 px-5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display tracking-wide transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98] cursor-pointer"
               >
                 Play Again
               </button>
               <button
                 type="button"
                 onClick={onReturnToTitle}
-                className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
+                className="h-11 px-5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 font-semibold text-xs border border-white/[0.1] transition-all active:scale-[0.98] cursor-pointer"
               >
                 Return to Lobby
               </button>

@@ -34,26 +34,26 @@ export const CurriculumDrawerModal: React.FC<CurriculumDrawerModalProps> = ({
       aria-modal="true"
       aria-labelledby="curriculum-modal-title"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80 pointer-events-auto cursor-pointer"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-md pointer-events-auto cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-4xl max-h-[88vh] flex flex-col bg-[#0B1120] border border-slate-700 rounded-xl shadow-2xl overflow-hidden cursor-default"
+        className="w-full max-w-4xl max-h-[88vh] flex flex-col bg-[#0D1527]/98 border border-white/[0.12] rounded-2xl shadow-2xl backdrop-blur-2xl overflow-hidden cursor-default"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
           <div>
             <h2 id="curriculum-modal-title" className="text-lg font-bold text-white font-display">
-              Question Bank &amp; Game Rules
+              Curriculum Bank &amp; Competition Rules
             </h2>
             <p className="text-xs text-slate-400">
-              Browse questions across all five subjects
+              Browse syllabus questions and game mechanics across all five academic domains
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 cursor-pointer"
+            className="h-9 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-semibold text-slate-200 border border-white/[0.1] transition-all cursor-pointer"
           >
             Close
           </button>
@@ -63,21 +63,21 @@ export const CurriculumDrawerModal: React.FC<CurriculumDrawerModalProps> = ({
         <div className="p-6 overflow-y-auto space-y-6">
           {/* Mechanics & Match Formats Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div className="text-xs text-slate-400 mb-1">Velocity & Streak Physics</div>
+            <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/[0.08]">
+              <div className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">Velocity &amp; Streak Physics</div>
               <div className="text-sm font-semibold text-white mb-2">
                 Base Cruise: <span className="font-mono tabular-nums text-cyan-400">{BASE_SPEED_KMH} km/h</span>
               </div>
-              <div className="text-xs text-slate-300 space-y-1 font-mono tabular-nums">
+              <div className="text-xs text-slate-300 space-y-1.5 font-mono tabular-nums">
                 <div>1st Correct: +{CORRECT_SPEED_BOOST_KMH} km/h</div>
                 <div>Win-Streak (2+): +{STREAK_SPEED_BOOST_KMH} km/h / Q</div>
                 <div>Incorrect Answer: -{WRONG_SPEED_PENALTY_KMH} km/h &amp; Reset</div>
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div className="text-xs text-slate-400 mb-1">Tournament Match Formats</div>
-              <div className="text-xs text-slate-200 space-y-1.5 font-mono tabular-nums mt-2">
+            <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/[0.08]">
+              <div className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">Tournament Match Formats</div>
+              <div className="text-xs text-slate-200 space-y-2 font-mono tabular-nums mt-2">
                 <div>
                   Sprint: {MATCH_LENGTHS.sprint.questionCount} Qs · {MATCH_LENGTHS.sprint.durationLabel}
                 </div>
@@ -90,30 +90,30 @@ export const CurriculumDrawerModal: React.FC<CurriculumDrawerModalProps> = ({
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div className="text-xs text-slate-400 mb-1">Educator & Investor Highlights</div>
+            <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/[0.08]">
+              <div className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-1">Fair Esports Seeding</div>
               <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                Deterministic room seeding ensures both 1v1 competitors receive identical academic question sequences. Immediate post-answer explanations reinforce retention.
+                Deterministic tournament seeding ensures every competitor receives the identical question sequence in real time. Explanations reinforce retention after each answer.
               </p>
             </div>
           </div>
 
           {/* Interactive Subject Filter Bar */}
           <div>
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h3 className="text-sm font-semibold text-white">
                 Verified Question Bank ({filteredQuestions.length} Items)
               </h3>
-              <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-[#070B14] rounded-xl border border-white/[0.08]">
                 {filterTabs.map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setFilterSubject(tab)}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap cursor-pointer ${
+                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                       filterSubject === tab
-                        ? 'bg-cyan-500 text-slate-950 font-semibold'
-                        : 'text-slate-300 hover:text-white'
+                        ? 'bg-cyan-500 text-slate-950 font-semibold shadow-sm'
+                        : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     {SUBJECT_METADATA[tab].shortLabel}
@@ -122,22 +122,22 @@ export const CurriculumDrawerModal: React.FC<CurriculumDrawerModalProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {filteredQuestions.map((q, idx) => (
                 <div
                   key={q.id}
-                  className="p-3.5 rounded-lg bg-slate-900/70 border border-slate-800/90 space-y-1.5"
+                  className="p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] space-y-2 transition-all"
                 >
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>
+                    <span className="font-mono">
                       {String(idx + 1).padStart(2, '0')}. {q.subjectLabel} · {q.topic} · {q.difficulty}
                     </span>
-                    <span className="font-mono text-emerald-400">
+                    <span className="font-mono text-emerald-400 font-semibold">
                       Answer: {q.options[q.correctIndex]}
                     </span>
                   </div>
                   <p className="text-sm font-medium text-slate-100">{q.prompt}</p>
-                  <p className="text-xs text-slate-400">{q.explanation}</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">{q.explanation}</p>
                 </div>
               ))}
             </div>

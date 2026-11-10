@@ -162,41 +162,23 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
   return (
     <div className="fixed inset-0 z-20 flex flex-col justify-between p-4 md:p-6 pointer-events-none overflow-y-auto">
       {/* Minimal Top Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pointer-events-auto">
-        <div className="flex items-center gap-3">
-          <svg
-            width="38"
-            height="38"
-            viewBox="0 0 48 48"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-            className="shrink-0"
-          >
-            <path
-              d="M8 10L24 4L40 10V24C40 34.5 24 43 24 43C24 43 8 34.5 8 24V10Z"
-              fill="#0B1324"
-              stroke="#06B6D4"
-              strokeWidth="2.5"
-            />
-            <path
-              d="M15 27L22 15H29L24 23H32L19 35L22 27H15Z"
-              fill="#F59E0B"
-              stroke="#FFFBEB"
-              strokeWidth="1.2"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white font-display">
-            Oxyain
-          </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-2 pointer-events-auto">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-mono font-bold text-xs shadow-sm">
+            OX
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white font-display">
+              Oxyain Arena
+            </h1>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {session ? (
             <div
               data-testid="lobby-auth-status"
-              className="px-3 py-1.5 rounded-lg bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 text-xs font-mono"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-medium"
             >
               {session.fullName}
             </div>
@@ -204,7 +186,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
             <>
               <div
                 data-testid="lobby-guest-display-name"
-                className="px-3 py-1.5 rounded-lg bg-slate-900/95 border border-cyan-500/40 text-cyan-300 text-xs font-mono"
+                className="px-3.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-cyan-300 text-xs font-mono font-medium"
               >
                 {normalizeGuestDisplayName(guestDisplayName, 'Contender')}
               </div>
@@ -212,7 +194,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
                 type="button"
                 data-testid="lobby-login-pro-btn"
                 onClick={onOpenLoginForPro}
-                className="px-3 py-1.5 rounded-lg bg-slate-900/95 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors cursor-pointer"
+                className="h-9 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-slate-200 text-xs font-medium transition-all cursor-pointer"
               >
                 Sign In
               </button>
@@ -223,7 +205,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
               type="button"
               data-testid="open-scr10-extractor-btn"
               onClick={onOpenSourceExtractor}
-              className="px-3 py-1.5 rounded-lg bg-slate-900/95 hover:bg-slate-800 text-emerald-300 border border-slate-700 text-xs font-medium transition-colors cursor-pointer"
+              className="h-9 px-3.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium transition-all cursor-pointer"
             >
               AI Import
             </button>
@@ -231,16 +213,16 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
           <button
             type="button"
             onClick={onOpenPublicPortal}
-            className="px-3 py-1.5 rounded-lg bg-slate-900/95 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium transition-colors cursor-pointer"
+            className="h-9 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/[0.1] text-xs font-medium transition-all cursor-pointer"
           >
             Home
           </button>
         </div>
       </div>
 
-      {/* Simple Centered Lobby Card */}
+      {/* Sleek Centered Lobby Card */}
       <div className="w-full max-w-2xl mx-auto my-auto py-3 pointer-events-auto">
-        <div className="bg-[#0B1120]/95 border border-slate-800 rounded-xl p-5 shadow-2xl space-y-4">
+        <div className="bg-[#0D1527]/95 border border-white/[0.08] rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
           {/* Post-Match Result Summary Banner (shown when returning to Lobby after finishing a game) */}
           {lastCompletedMatch && (
             <div
@@ -324,7 +306,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
           )}
 
           {/* 1. Mode Toggle */}
-          <div className="grid grid-cols-2 gap-2" role="group" aria-label="Game Mode">
+          <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="Game Mode">
             <button
               type="button"
               data-testid="mode-quickplay-btn"
@@ -335,10 +317,10 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
                 setProGateNotice(null);
               }}
               aria-pressed={mode === 'quickplay'}
-              className={`py-2.5 px-3 rounded-lg text-xs font-bold font-display border transition-colors cursor-pointer ${
+              className={`h-11 px-4 rounded-xl text-xs font-bold font-display transition-all cursor-pointer ${
                 mode === 'quickplay'
-                  ? 'bg-emerald-500/20 border-emerald-400 text-white'
-                  : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                  : 'bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.08]'
               }`}
             >
               Quick Play (1v1)
@@ -353,10 +335,10 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
                 setRoomCodeError(null);
               }}
               aria-pressed={mode === 'custom'}
-              className={`py-2.5 px-3 rounded-lg text-xs font-bold font-display border transition-colors cursor-pointer ${
+              className={`h-11 px-4 rounded-xl text-xs font-bold font-display transition-all cursor-pointer ${
                 mode === 'custom'
-                  ? 'bg-cyan-500/20 border-cyan-400 text-white'
-                  : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                  : 'bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.08]'
               }`}
             >
               Multiplayer Room
@@ -638,13 +620,13 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
           </div>
 
           {/* 6. Simple Primary Action Row */}
-          <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row items-center gap-2.5">
+          <div className="pt-3 border-t border-white/[0.08] flex flex-col sm:flex-row items-center gap-3">
             {mode === 'custom' ? (
               <button
                 type="button"
                 data-testid="open-waiting-room-btn"
                 onClick={onOpenWaitingRoom}
-                className="w-full py-3 px-5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-display text-sm tracking-wide transition-colors cursor-pointer"
+                className="w-full h-12 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-display text-sm tracking-wide transition-all shadow-md shadow-cyan-500/20 active:scale-[0.98] cursor-pointer"
               >
                 Enter Multiplayer Room ({roomCodeInput} · {liveRoomPeers.length + 1}/{competitorCount} Joined)
               </button>
@@ -655,7 +637,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
                     type="button"
                     data-testid="open-matchmaking-queue-btn"
                     onClick={onOpenQuickMatchQueue}
-                    className="w-full sm:w-auto flex-1 py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 border border-cyan-400/50 text-cyan-300 font-bold font-display text-xs tracking-wide transition-colors cursor-pointer"
+                    className="w-full sm:w-auto flex-1 h-12 px-5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.12] text-cyan-300 font-bold font-display text-xs tracking-wide transition-all active:scale-[0.98] cursor-pointer"
                   >
                     Find 1v1 Opponent
                   </button>
@@ -665,7 +647,7 @@ export const TitleScreenModal: React.FC<TitleScreenModalProps> = ({
                   data-start="true"
                   data-testid="launch-match-btn"
                   onClick={onStartMatch}
-                  className="w-full sm:w-auto flex-1 py-2.5 px-5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-display text-sm tracking-wide transition-colors cursor-pointer"
+                  className="w-full sm:w-auto flex-1 h-12 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-display text-sm tracking-wide transition-all shadow-md shadow-emerald-500/20 active:scale-[0.98] cursor-pointer"
                 >
                   Start 1v1 Match
                 </button>

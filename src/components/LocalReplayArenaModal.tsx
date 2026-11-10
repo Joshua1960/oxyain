@@ -78,7 +78,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
         {/* Left: Replay Telemetry Readouts */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-3.5 bg-[#070B14]/92 border border-cyan-500/40 rounded-xl px-3.5 py-2 pointer-events-auto shadow-2xl cursor-default"
+          className="flex items-center gap-3.5 bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-2.5 pointer-events-auto shadow-2xl cursor-default"
         >
           <div>
             <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400">
@@ -89,7 +89,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
             </div>
           </div>
 
-          <div className="h-7 w-px bg-slate-800" aria-hidden="true" />
+          <div className="h-7 w-px bg-white/10" aria-hidden="true" />
 
           <div>
             <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
@@ -116,7 +116,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
             </div>
           </div>
 
-          <div className="h-7 w-px bg-slate-800 hidden sm:block" aria-hidden="true" />
+          <div className="h-7 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
 
           <div className="hidden sm:block">
             <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
@@ -133,7 +133,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
           onClick={(e) => e.stopPropagation()}
           className="flex items-center gap-2.5 pointer-events-auto shrink-0 cursor-default"
         >
-          <div className="hidden xl:flex items-center gap-2.5 bg-[#070B14]/92 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono tabular-nums">
+          <div className="hidden xl:flex items-center gap-2.5 bg-[#070B14]/90 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-xs font-mono tabular-nums">
             <span className="text-emerald-400">{nitroCount} Boosts</span>
             <span className="text-slate-600">·</span>
             <span className="text-rose-400">{mistakeCount} Penalties</span>
@@ -145,7 +145,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
             type="button"
             data-testid="exit-flush-replay-btn"
             onClick={onExitAndFlushMemory}
-            className="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold font-display text-xs tracking-wide transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-lg"
+            className="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold font-display text-xs tracking-wide transition-all shadow-lg shadow-rose-500/20 whitespace-nowrap shrink-0 cursor-pointer active:scale-95"
           >
             Exit Replay
           </button>
@@ -157,7 +157,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-4xl mx-auto px-4 pb-4 pointer-events-auto cursor-default"
       >
-        <div className="bg-[#0B1120]/96 border border-slate-700/90 rounded-xl p-4 md:p-5 shadow-2xl space-y-3.5">
+        <div className="bg-[#070B14]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 md:p-5 shadow-2xl space-y-4">
           {/* Step-by-Step Controls & Timeline Scrubber Header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
                   onSelectStep(0);
                 }}
                 disabled={safeIndex === 0}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-xs font-mono text-slate-200 transition-colors cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/10 text-xs font-mono text-slate-200 transition-colors cursor-pointer"
               >
                 Start
               </button>
@@ -180,7 +180,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
                   onSelectStep(Math.max(0, safeIndex - 1));
                 }}
                 disabled={safeIndex === 0}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-xs font-mono font-semibold text-white transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/10 text-xs font-mono font-semibold text-white transition-colors cursor-pointer"
               >
                 Prev Step
               </button>
@@ -188,7 +188,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
                 type="button"
                 data-testid="replay-play-toggle-btn"
                 onClick={() => setIsPlaying((prev) => !prev)}
-                className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-mono font-bold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-mono font-bold transition-all shadow-lg shadow-cyan-500/20 cursor-pointer active:scale-95"
               >
                 {isPlaying ? 'Pause Replay' : 'Auto-Step'}
               </button>
@@ -200,7 +200,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
                   onSelectStep(Math.min(totalSteps - 1, safeIndex + 1));
                 }}
                 disabled={safeIndex >= totalSteps - 1}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-xs font-mono font-semibold text-white transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/10 text-xs font-mono font-semibold text-white transition-colors cursor-pointer"
               >
                 Next Step
               </button>
@@ -211,7 +211,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
                   onSelectStep(totalSteps - 1);
                 }}
                 disabled={safeIndex >= totalSteps - 1}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 border border-slate-700 text-xs font-mono text-slate-200 transition-colors cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 border border-white/10 text-xs font-mono text-slate-200 transition-colors cursor-pointer"
               >
                 End
               </button>
@@ -219,15 +219,15 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
 
             {/* Playback Rate & Step Readout */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+              <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
                 {([0.5, 1, 2] as const).map((rate) => (
                   <button
                     key={rate}
                     type="button"
                     onClick={() => setPlaybackSpeed(rate)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-mono transition-colors cursor-pointer ${
                       playbackSpeed === rate
-                        ? 'bg-cyan-500 text-slate-950 font-bold'
+                        ? 'bg-cyan-400 text-slate-950 font-bold shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
@@ -257,10 +257,10 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
                     setIsPlaying(false);
                     onSelectStep(idx);
                   }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                     isCurrent
-                      ? 'bg-slate-800 border-cyan-400 text-white font-bold'
-                      : 'bg-slate-950/90 border-slate-800 text-slate-400 hover:border-slate-700'
+                      ? 'bg-cyan-500/15 border-cyan-400 text-white font-bold'
+                      : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/15 hover:text-slate-200'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${nodeDotStyles[evt.type]}`} />
@@ -286,7 +286,7 @@ export const LocalReplayArenaModal: React.FC<LocalReplayArenaModalProps> = ({
           {/* Step-by-Step Event Fidelity Inspector */}
           <div
             data-testid="replay-event-detail-card"
-            className="p-3.5 rounded-xl bg-slate-950/95 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3"
+            className="p-4 rounded-xl bg-black/40 border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3"
           >
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">

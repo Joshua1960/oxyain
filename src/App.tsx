@@ -54,14 +54,44 @@ import { soundFX } from "./game/sound";
 import { TitleScreenModal } from "./components/TitleScreenModal";
 import { PlayingHudAndQuizDeck } from "./components/PlayingHudAndQuizDeck";
 import { StatusModalCard } from "./components/StatusModalCard";
-import { LocalReplayArenaModal } from "./components/LocalReplayArenaModal";
-import { CurriculumDrawerModal } from "./components/CurriculumDrawerModal";
 import { Scr01LandingPortal } from "./components/Scr01LandingPortal";
-import { Scr09QuestionGeneratorDashboard } from "./components/Scr09QuestionGeneratorDashboard";
-import { Scr10AiSourceExtractionConsole } from "./components/Scr10AiSourceExtractionConsole";
-import { AuthModal } from "./components/AuthModal";
-import { QuickMatchQueueModal } from "./components/QuickMatchQueueModal";
-import { WaitingRoomModal } from "./components/WaitingRoomModal";
+import { ThemeProvider } from "./context/ThemeContext";
+
+const LocalReplayArenaModal = lazy(() =>
+  import("./components/LocalReplayArenaModal").then((m) => ({
+    default: m.LocalReplayArenaModal,
+  }))
+);
+const CurriculumDrawerModal = lazy(() =>
+  import("./components/CurriculumDrawerModal").then((m) => ({
+    default: m.CurriculumDrawerModal,
+  }))
+);
+const Scr09QuestionGeneratorDashboard = lazy(() =>
+  import("./components/Scr09QuestionGeneratorDashboard").then((m) => ({
+    default: m.Scr09QuestionGeneratorDashboard,
+  }))
+);
+const Scr10AiSourceExtractionConsole = lazy(() =>
+  import("./components/Scr10AiSourceExtractionConsole").then((m) => ({
+    default: m.Scr10AiSourceExtractionConsole,
+  }))
+);
+const AuthModal = lazy(() =>
+  import("./components/AuthModal").then((m) => ({
+    default: m.AuthModal,
+  }))
+);
+const QuickMatchQueueModal = lazy(() =>
+  import("./components/QuickMatchQueueModal").then((m) => ({
+    default: m.QuickMatchQueueModal,
+  }))
+);
+const WaitingRoomModal = lazy(() =>
+  import("./components/WaitingRoomModal").then((m) => ({
+    default: m.WaitingRoomModal,
+  }))
+);
 
 const ThreeRaceViewport = lazy(() =>
   import("./components/ThreeRaceViewport").then((module) => ({
@@ -1447,9 +1477,10 @@ export default function App() {
   ]);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-[#070B14] select-none">
-      {/* Persistent Three.js 3D Viewport mounted once in an isolated container */}
-      <Suspense fallback={<div className="absolute inset-0 bg-[#070B14]" />}>
+    <ThemeProvider>
+      <main className="relative w-screen h-screen overflow-hidden bg-[var(--bg-canvas)] text-[var(--text-primary)] select-none">
+        {/* Persistent Three.js 3D Viewport mounted once in an isolated container */}
+        <Suspense fallback={<div className="absolute inset-0 bg-[var(--bg-canvas)]" />}>
         <ThreeRaceViewport
           matchRef={matchRef}
           previewSport={sport}
@@ -1559,91 +1590,59 @@ export default function App() {
           />
         )}
 
-      {/* Quick Match Matchmaking Lobby (1v1 Queue State) ('/matchmaking') */}
-      <QuickMatchQueueModal
-        isOpen={isQueueModalOpen}
-        queueState={queueState}
-        session={session}
-        guestDisplayName={guestDisplayName}
-        sport={sport}
-        subject={subject}
-        questionDifficulty={questionDifficulty}
-        questionCount={questionCount}
-        wsConnected={wsConnected}
-        onForcePairNow={handleForcePairNow}
-        onCancelQueue={handleCancelQueue}
-      />
-
-      {/* Multiplayer Waiting Room System ('/waiting-room') */}
-      <WaitingRoomModal
-        isOpen={isWaitingRoomOpen}
-        roomCode={roomCodeInput}
-        sport={sport}
-        subject={subject}
-        questionDifficulty={questionDifficulty}
-        questionCount={questionCount}
-        competitorCount={competitorCount}
-        session={session}
-        localPlayerId={clientPlayerIdRef.current}
-        localIsHost={isLocalHost}
-        localIsReady={localIsReady}
-        remotePeers={liveRoomPeers}
-        wsConnected={wsConnected}
-        roomError={roomError}
-        onToggleReady={handleToggleWaitingRoomReady}
-        onLaunchMatch={handleStartMatch}
-        onLeaveWaitingRoom={handleLeaveWaitingRoom}
-        guestDisplayName={guestDisplayName}
-        onChangeGuestDisplayName={handleUpdateGuestDisplayName}
-      />
-
-      {/* [SCR-09] Custom Question Generator Dashboard ('/generator') */}
-      <Scr09QuestionGeneratorDashboard
-        isOpen={isGeneratorOpen}
-        session={session}
-        banks={customBanks}
-        activeBankId={activeBankId}
-        onSelectBank={(id) => setActiveBankId(id)}
-        onSaveBank={handleSaveCustomBank}
-        onDeleteBank={handleDeleteCustomBank}
-        onCloseToLobby={() => navigateToRoute("lobby")}
-        onLaunchRaceWithBank={handleLaunchRaceWithCustomBank}
-        onOpenSourceExtractor={() => navigateToRoute("extractor")}
-        onOpenAuthModal={() =>
-          setAuthModalState({
-            isOpen: true,
-            mode: "signup",
-            tier: "classroom",
-            role: "educator",
-          })
-        }
-        onQuickUnlockDemoPro={() =>
-          setSession({
-            id: "pro-demo-elena",
-            email: "elena.vance@academy.edu",
-            fullName: "Dr. Elena Vance",
-            role: "educator",
-            tier: "classroom",
-          })
-        }
-      />
-
-      {/* [SCR-10] AI Source Extraction Console ('/extractor') */}
-      {isExtractorOpen && (
-        <Scr10AiSourceExtractionConsole
+      {/* Lazy Suspense Boundary for On-Demand Off-Screen Modals & Generator Dashboards */}
+      <Suspense fallback={null}>
+        {/* Quick Match Matchmaking Lobby (1v1 Queue State) ('/matchmaking') */}
+        <QuickMatchQueueModal
+          isOpen={isQueueModalOpen}
+          queueState={queueState}
           session={session}
-          onSaveExtractedBank={(bank) => {
-            handleSaveCustomBank(bank);
-            setActiveBankId(bank.id);
-          }}
-          onLaunchWithExtractedBank={handleLaunchRaceWithCustomBank}
-          onOpenInQuestionGenerator={(bank) => {
-            handleSaveCustomBank(bank);
-            setActiveBankId(bank.id);
-            navigateToRoute("generator");
-          }}
-          onBackToLobby={() => navigateToRoute("lobby")}
-          onOpenAuthForPro={() =>
+          guestDisplayName={guestDisplayName}
+          sport={sport}
+          subject={subject}
+          questionDifficulty={questionDifficulty}
+          questionCount={questionCount}
+          wsConnected={wsConnected}
+          onForcePairNow={handleForcePairNow}
+          onCancelQueue={handleCancelQueue}
+        />
+
+        {/* Multiplayer Waiting Room System ('/waiting-room') */}
+        <WaitingRoomModal
+          isOpen={isWaitingRoomOpen}
+          roomCode={roomCodeInput}
+          sport={sport}
+          subject={subject}
+          questionDifficulty={questionDifficulty}
+          questionCount={questionCount}
+          competitorCount={competitorCount}
+          session={session}
+          localPlayerId={clientPlayerIdRef.current}
+          localIsHost={isLocalHost}
+          localIsReady={localIsReady}
+          remotePeers={liveRoomPeers}
+          wsConnected={wsConnected}
+          roomError={roomError}
+          onToggleReady={handleToggleWaitingRoomReady}
+          onLaunchMatch={handleStartMatch}
+          onLeaveWaitingRoom={handleLeaveWaitingRoom}
+          guestDisplayName={guestDisplayName}
+          onChangeGuestDisplayName={handleUpdateGuestDisplayName}
+        />
+
+        {/* [SCR-09] Custom Question Generator Dashboard ('/generator') */}
+        <Scr09QuestionGeneratorDashboard
+          isOpen={isGeneratorOpen}
+          session={session}
+          banks={customBanks}
+          activeBankId={activeBankId}
+          onSelectBank={(id) => setActiveBankId(id)}
+          onSaveBank={handleSaveCustomBank}
+          onDeleteBank={handleDeleteCustomBank}
+          onCloseToLobby={() => navigateToRoute("lobby")}
+          onLaunchRaceWithBank={handleLaunchRaceWithCustomBank}
+          onOpenSourceExtractor={() => navigateToRoute("extractor")}
+          onOpenAuthModal={() =>
             setAuthModalState({
               isOpen: true,
               mode: "signup",
@@ -1651,7 +1650,7 @@ export default function App() {
               role: "educator",
             })
           }
-          onQuickDemoProLogin={() =>
+          onQuickUnlockDemoPro={() =>
             setSession({
               id: "pro-demo-elena",
               email: "elena.vance@academy.edu",
@@ -1661,7 +1660,42 @@ export default function App() {
             })
           }
         />
-      )}
+
+        {/* [SCR-10] AI Source Extraction Console ('/extractor') */}
+        {isExtractorOpen && (
+          <Scr10AiSourceExtractionConsole
+            session={session}
+            onSaveExtractedBank={(bank) => {
+              handleSaveCustomBank(bank);
+              setActiveBankId(bank.id);
+            }}
+            onLaunchWithExtractedBank={handleLaunchRaceWithCustomBank}
+            onOpenInQuestionGenerator={(bank) => {
+              handleSaveCustomBank(bank);
+              setActiveBankId(bank.id);
+              navigateToRoute("generator");
+            }}
+            onBackToLobby={() => navigateToRoute("lobby")}
+            onOpenAuthForPro={() =>
+              setAuthModalState({
+                isOpen: true,
+                mode: "signup",
+                tier: "classroom",
+                role: "educator",
+              })
+            }
+            onQuickDemoProLogin={() =>
+              setSession({
+                id: "pro-demo-elena",
+                email: "elena.vance@academy.edu",
+                fullName: "Dr. Elena Vance",
+                role: "educator",
+                tier: "classroom",
+              })
+            }
+          />
+        )}
+      </Suspense>
 
       {/* Active Gameplay HUD & Split-Screen Academic Quiz Deck ('/play') */}
       {(match.status === "playing" ||
@@ -1713,45 +1747,49 @@ export default function App() {
         onLaunchReplayArena={handleLaunchReplayArena}
       />
 
-      {/* Local In-Memory Replay Arena View Screen ('/replay') */}
-      <LocalReplayArenaModal
-        match={match}
-        currentStepIndex={replayStepIndex}
-        onSelectStep={(idx) => setReplayStepIndex(idx)}
-        onExitAndFlushMemory={handleExitAndFlushReplay}
-      />
+      {/* Lazy Suspense Boundary for Replay, Auth & Curriculum Modals */}
+      <Suspense fallback={null}>
+        {/* Local In-Memory Replay Arena View Screen ('/replay') */}
+        <LocalReplayArenaModal
+          match={match}
+          currentStepIndex={replayStepIndex}
+          onSelectStep={(idx) => setReplayStepIndex(idx)}
+          onExitAndFlushMemory={handleExitAndFlushReplay}
+        />
 
-      {/* Authentication & Plan Enrollment Modal */}
-      <AuthModal
-        isOpen={authModalState.isOpen}
-        initialMode={authModalState.mode}
-        initialTier={authModalState.tier}
-        initialRole={authModalState.role}
-        onClose={() =>
-          setAuthModalState((prev) => ({ ...prev, isOpen: false }))
-        }
-        onAuthenticated={(newSession) => {
-          setSession(newSession);
-          setAuthModalState((prev) => ({ ...prev, isOpen: false }));
-          setProGateNotice(null);
-          setMode("custom");
-          setCompetitorCount(8);
-          if (activeRoute === "landing") {
-            navigateToRoute("lobby");
+        {/* Authentication & Plan Enrollment Modal */}
+        <AuthModal
+          isOpen={authModalState.isOpen}
+          initialMode={authModalState.mode}
+          initialTier={authModalState.tier}
+          initialRole={authModalState.role}
+          onClose={() =>
+            setAuthModalState((prev) => ({ ...prev, isOpen: false }))
           }
-        }}
-      />
+          onAuthenticated={(newSession) => {
+            setSession(newSession);
+            setAuthModalState((prev) => ({ ...prev, isOpen: false }));
+            setProGateNotice(null);
+            setMode("custom");
+            setCompetitorCount(8);
+            if (activeRoute === "landing") {
+              navigateToRoute("lobby");
+            }
+          }}
+        />
 
-      {/* Educator, Student & Investor Curriculum Brief Modal ('/curriculum') */}
-      <CurriculumDrawerModal
-        isOpen={isCurriculumOpen}
-        onClose={() => {
-          setIsCurriculumOpen(false);
-          if (activeRoute === "curriculum") {
-            navigateToRoute(showPublicPortal ? "landing" : "lobby");
-          }
-        }}
-      />
+        {/* Educator, Student & Investor Curriculum Brief Modal ('/curriculum') */}
+        <CurriculumDrawerModal
+          isOpen={isCurriculumOpen}
+          onClose={() => {
+            setIsCurriculumOpen(false);
+            if (activeRoute === "curriculum") {
+              navigateToRoute(showPublicPortal ? "landing" : "lobby");
+            }
+          }}
+        />
+      </Suspense>
     </main>
+    </ThemeProvider>
   );
 }
